@@ -1,0 +1,63 @@
+import sat.
+
+main =>
+    Facts = $[n_pizzas(4),
+              pizza(1,10),
+              pizza(2,5),
+              pizza(3,20),
+              pizza(4,15),
+              n_vouchers(2),
+              voucher(1,1,1),
+              voucher(2,2,1)],
+    pizza(Facts).              
+
+main([File]) =>
+    Facts = read_file_terms(File),
+    pizza(Facts).
+
+pizza(Facts) =>
+    cl_facts(Facts),
+    n_pizzas(N),
+    Prices = new_array(N),
+    foreach (I in 1..N)
+        pizza(I,C),
+        Prices[I] = C
+    end,
+    n_vouchers(M),
+    Buy = new_array(M),
+    Free = new_array(M),
+    foreach (I in 1..M)
+        voucher(I,B,F),
+        Buy[I] = B,
+    Free[I] = F
+    end,
+
+    How = new_array(N),  
+    How :: -M..M,    % -I buy using voucher I, I free from voucher I, 0 obtained without using a voucher
+    
+    Used = new_array(M),
+    Used :: 0..1,
+
+    % assign right number of pizzas to buy order
+    foreach(V in 1..M)
+        Used[V] #<=> sum([How[P] #= -V : P in 1..N]) #>= Buy[V]
+    end,
+
+    % assign not too many pizzas to free order
+    foreach(V in 1..M)
+        sum([How[P] #= V : P in 1..N]) #=< Used[V]*Free[V]
+    end,
+
+    % pizzas assigned to free are cheaper than pizzas assigned to buy
+    foreach (P1 in 1..N, P2 in 1..N)
+        How[P1] #<0 #/\ How[P1] #= -How[P2] #=> Prices[P2] #=< Prices[P1]
+    end,
+
+    Cost #= sum([(How[P] #=< 0)*Prices[P] : P in 1..N]),
+
+    solve([$min(Cost)],How),
+    printf("cost(%w).\n",Cost).
+        
+    
+    
+    

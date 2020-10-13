@@ -1,0 +1,61 @@
+main =>
+    Fs = $[dishes(3),
+           separation(1),
+           hot(1),
+           table_width(4),
+           dish_width(1, 1),
+           dish_width(2, 1),
+           dish_width(3, 2),
+           demand(1, 1),
+           demand(2, 1),
+           demand(3, 1)],
+    buffet(Fs).
+    
+
+main([File]) =>
+    Fs = read_file_terms(File),
+    buffet(Fs).
+
+buffet(Fs) =>
+    cl_facts(Fs),
+    dishes(N),
+    hot(H),
+    separation(D),
+    table_width(L),
+    Hs = [(W,Num) : I in 1..H, dish_width(I,W), demand(I,Num)].sort(),
+    Cs = [(W,Num) : I in H+1..N, dish_width(I,W), demand(I,Num)].sort(),
+    find(h,Hs,Cs,D,L,L,NT1),
+    find(c,Hs,Cs,D,L,L,NT2),
+    printf("table(%w).\n",min(NT1,NT2)).
+
+table (+,+,+,+,+,+,min)
+find(PreType,Hs,Cs,D,L,L0,NT) ?=>
+    select_plate(PreType,Hs,Cs,D,L,L1,CurType,Hs1,Cs1),
+    (Hs1 == [], Cs1 == [] -> NT = 1; find(CurType,Hs1,Cs1,D,L1,L0,NT)).
+find(_PreType,Hs,Cs,D,_L,L0,NT) =>
+    find(h,Hs,Cs,D,L0,L0,NT1),
+    find(c,Hs,Cs,D,L0,L0,NT2),
+    NT = min(NT1,NT2)+1.
+
+select_plate(PreType,Hs,Cs,D,L,L1,CurType,Hs1,Cs1) ?=>
+    select((W,Num),Hs,HsR),
+    (PreType == h -> NeededW = W; NeededW = W+D),
+    NeededW =< L,
+    L1 = L-NeededW,
+    Num1 = Num-1,
+    (Num1 == 0 -> Hs1 = HsR; Hs1 = insert_ordered(HsR,(W,Num1))),
+    Cs1 = Cs,
+    CurType = h.
+select_plate(PreType,Hs,Cs,D,L,L1,CurType,Hs1,Cs1) =>
+    select((W,Num),Cs,CsR),
+    (PreType == c -> NeededW = W; NeededW = W+D),
+    NeededW =< L,
+    L1 = L-NeededW,    
+    Num1 = Num-1,
+    (Num1 == 0 -> Cs1 = CsR; Cs1 = insert_ordered(CsR,(W,Num1))),
+    Hs1 = Hs,
+    CurType = c.
+
+
+
+    
