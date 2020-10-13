@@ -1,0 +1,39 @@
+% short_position.pi, N.F. Zhou
+% picat short_position instanceFile
+%%
+main =>
+    Stocks = $[stock(vandelayIndustries, [0, 0, 1, 1, 2, 2, 1, 1, 0, 1, 2, 0]),
+               stock(kramerica, [0, 1, 2, 4, 3, 1, 3, 4, 5, 2, 1, 0]),
+               stock(sunshineCarpetCleaners, [0, 1, 2, 4, 4, 1, 0, 2, 4, 1, 0, 0]),
+               stock(tylerChicken, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0])],
+    sposition(Stocks).    
+
+main([File]) =>
+    Stocks = read_file_terms(File),
+    sposition(Stocks).
+
+sposition(Stocks) =>
+    islands(Stocks,Name,Count),
+    printf("short_position(%w, %w).\n",Name,Count).
+
+table (+,-,max)
+islands(Stocks,Name,Count) =>
+    member($stock(Name,Seq),Stocks),
+    Seq = [Pre|Seq1],
+    count_islands(Pre,Seq1,[],0,Count).
+
+count_islands(_Pre,[],_Is,C0,C) => C=C0.
+count_islands(X,[X|L],Is,C0,C) =>
+    count_islands(X,L,Is,C0,C).
+count_islands(Pre,[X|L],Is,C0,C) =>
+    update(X,Is,Is1,C0,C1),
+    (Pre<X -> Is2=[(Pre,X)|Is1]; Is2=Is1),
+    count_islands(X,L,Is2,C1,C).
+
+update(_,[],NIs,C0,C) => NIs=[], C=C0.
+update(X,[I|Is],NIs,C0,C), I=(Pre,Min), Min>X =>
+    (X > Pre -> NIs = [(Pre,X)|NIs1]; NIs=NIs1),
+    update(X,Is,NIs1,C0+1,C).
+update(X,[I|Is],NIs,C0,C), I=(Pre,Min) =>
+    (X > Pre -> NIs = [(Pre,Min)|NIs1]; NIs=NIs1),
+    update(X,Is,NIs1,C0,C).

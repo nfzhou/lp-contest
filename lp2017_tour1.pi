@@ -1,0 +1,48 @@
+import cp.
+
+main =>
+    Fs = $[people(2),
+           places(3),
+           preferences(4),
+           order(1, 1, 2),
+           order(1, 2, 3),
+           order(2, 3, 2),
+           order(2, 2, 1)],
+    pour(Fs).           
+
+main([File]) =>
+    Fs = read_file_terms(File),
+    pour(Fs).
+
+pour(Fs) =>
+    cl_facts(Fs, $[order(+,+,+)]),
+    people(N),
+    places(M),
+    Order = new_array(N,M,M),
+    foreach (P in 1..N, Loc1 in 1..M, Loc2 in 1..M)
+        (order(P,Loc1,Loc2) -> Order[P,Loc1,Loc2] = 1; true)
+    end,
+    transitive_closure(N,M,Order),
+    Tour = new_array(M),
+    Tour :: 1..M,
+    all_different(Tour),
+    Violations = new_array(N,M,M),
+    Violations :: 0..1,
+    foreach (P in 1..N, Loc1 in 1..M, Loc2 in 1..M)
+        (Order[P,Loc1,Loc2] == 1 ->
+            element(I1,Tour,Loc1),
+            element(I2,Tour,Loc2),
+            I1 #> I2 #<=> Violations[P,Loc1,Loc2]
+        ;
+            true
+        )
+    end,
+    Total #= sum([Violations[P,Loc1,Loc2] : P in 1..N, Loc1 in 1..M, Loc2 in 1..M]),
+    solve($[min(Total)],(Tour,Violations)),
+    printf("violations(%w).\n",Total).
+
+% transitive closure
+transitive_closure(N,M,Order) =>
+    foreach (P in 1..N, K in 1..M, I in 1..M, J in 1..M)
+        (Order[P,I,K] == 1, Order[P,K,J] == 1 -> Order[P,I,J] = 1; true)
+    end.

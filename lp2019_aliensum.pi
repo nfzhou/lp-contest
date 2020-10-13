@@ -1,0 +1,55 @@
+% aliensum.pi
+import cp.
+
+main =>
+    Fs = $[a(0,99),  a(1,117), a(2,99), a(3,100), a(4,117), a(5,99),
+          b(0,117), b(1,117), b(2,99), b(3,117), b(4,116), b(5,99),
+          c(0,117), c(1,100), c(2,99), c(3,116), c(4,99),  c(5,117)],
+    alien(Fs).
+
+main([File]) =>
+    Fs = read_file_terms(File),
+    alien(Fs).
+
+alien(Fs) =>
+    Len = len(Fs) div 3,
+    A = new_array(Len),
+    B = new_array(Len),
+    C = new_array(Len),
+    foreach ($a(I,D) in Fs)
+        A[I+1] = D
+    end,
+    foreach ($b(I,D) in Fs)
+        B[I+1] = D
+    end,
+    foreach ($c(I,D) in Fs)
+        C[I+1] = D
+    end,
+    Ds = sort_remove_dups(to_list(A) ++ to_list(B) ++ to_list(C)),
+    N = len(Ds),
+    Vs = new_list(N),
+    all_different(Vs),
+    Vs :: 0..N-1,
+    M = new_map(),
+    foreach ({V,D} in zip(Vs,Ds))
+        M.put(D,V)
+    end,
+    sum(A,N,M,AExp),
+    sum(B,N,M,BExp),
+    sum(C,N,M,CExp),
+    AExp + BExp #= CExp,
+    solve(Vs),
+    foreach (D in Ds)
+        V = M.get(D),
+        printf("decode(%d,%d).\n",D,V)
+    end.
+    
+sum(A,N,M,Exp) =>
+    S = 0,
+    P = 1,
+    foreach (I in 1..len(A))
+        V = M.get(A[I]),
+        S := $(S + V*P),
+        P := (N*P)
+    end,
+    Exp = S.

@@ -1,0 +1,68 @@
+% friend.pi N.F. Zhou
+% picat friend instanceFile
+%%
+import sat.
+
+main =>
+    As = $[people(4),
+	       host_protocol(1,0,0),
+		   host_protocol(2,1,1),
+		   host_protocol(3,2,0),
+		   confidence(0,50),
+		   confidence(1,25),
+		   confidence(2,25),
+		   confidence(3,10)],
+    friend(As).
+	
+main([File]) =>
+    As = read_file_terms(File),
+    friend(As).
+
+friend(As) =>
+    cl_facts(As, $[people(-),host_protocol(+,-,-),confidence(+,-)]),
+    people(N),
+    G = new_map(),
+    foreach(I in 0..N-1)
+        G.put(I,[])
+    end,
+    foreach(I in 1..N-1)
+        host_protocol(I,H,P),
+        add_fs(I,H,P,G)
+    end,
+    foreach (I in 0..N-1)
+        printf("%w: %w\n",I,G.get(I))
+    end,
+    S = new_list(N),
+    S :: 0..1,
+    foreach (I in 1..N-1, J in I+1..N)
+        (edge(I-1,J-1,G) -> #~S[I] #\/ #~S[J]; true)
+    end,
+    T #= sum([S[I]*C : I in 1..N, confidence(I-1,C)]),
+    solve($[max(T)],S),
+    printf("max_confidence(%w).\n",T).
+
+add_fs(I,H,0,G) =>
+    FsH = G.get(H),
+    G.put(H,[I|FsH]),
+    G.put(I,[H]).
+add_fs(I,H,1,G) =>
+    FsH = G.get(H),
+    foreach (F in FsH)
+        FFs = G.get(F),
+        G.put(F,[I|FFs])
+    end,
+    G.put(I,FsH).
+add_fs(I,H,_,G) =>
+    add_fs(I,H,0,G),
+    add_fs(I,H,1,G).
+
+edge(I,J,G), 
+    Fs = G.get(I),
+    membchk(J,Fs)
+=>
+    true.
+edge(I,J,G), 
+    Fs = G.get(J),
+    membchk(I,Fs)
+=>
+  true.    

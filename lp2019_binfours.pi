@@ -1,0 +1,72 @@
+% binfours.pi
+import planner.
+
+main =>
+    Fs = $[n(10)],
+    binfours(Fs).
+    
+main([File]) =>
+    Fs = read_file_terms(File),
+    binfours(Fs).
+
+binfours([n(N)]) =>
+    best_plan([4,[4,4,4],N],8,Plan,_Len),
+    rpn(Plan,4,R),
+    output(R,0).
+
+final([G,[],G]) => true.
+
+action([A,Fs,G],NewS,Action,Cost) ?=>
+    Action = [neg],
+    Cost = 1,
+    B = (-A) /\ 0xff,
+    NewS = [B,Fs,G].
+action([A,Fs,G],NewS,Action,Cost) ?=>
+    Action = [not],
+    Cost = 1,
+    B = (~A) /\ 0xff,
+    NewS = [B,Fs,G].
+action([A,[_|Fs],G],NewS,Action,Cost) ?=>
+    Action = [4,add],
+    Cost = 1,
+    B = (4+A) /\ 0xff,
+    NewS = [B,Fs,G].
+action([A,[_|Fs],G],NewS,Action,Cost) ?=>
+    Action = [neg,4,add],
+    Cost = 2,
+    B = (252+A) /\ 0xff,
+    NewS = [B,Fs,G].
+action([A,[_|Fs],G],NewS,Action,Cost) ?=>
+    Action = [not,4,add],
+    Cost = 2,
+    B = (251+A) /\ 0xff,
+    NewS = [B,Fs,G].
+action([A,[_|Fs],G],NewS,Action,Cost) ?=>
+    Action = [4,mul],
+    Cost = 1,
+    B = (4*A) /\ 0xff,
+    NewS = [B,Fs,G].
+action([A,[_|Fs],G],NewS,Action,Cost) ?=>
+    Action = [neg,4,mul],
+    Cost = 2,
+    B = (252*A) /\ 0xff,
+    NewS = [B,Fs,G].
+action([A,[_|Fs],G],NewS,Action,Cost) ?=>
+    Action = [not,4,mul],
+    Cost = 2,
+    B = (251*A) /\ 0xff,
+    NewS = [B,Fs,G].
+
+rpn([],R0,R) => R = flatten(R0).
+rpn([[Op]|Plan],R0,R) =>
+    rpn(Plan,[R0,Op],R).
+rpn([[4,Op]|Plan],R0,R) =>
+    rpn(Plan,[4,R0,Op],R).
+rpn([[Op1,4,Op2]|Plan],R0,R) =>
+    rpn(Plan,[4,Op1,R0,Op2],R).
+    
+output([],_I) => true.
+output([A|R],I) =>
+    printf("op(%d,%w).\n",I,A),
+    output(R,I+1).
+    

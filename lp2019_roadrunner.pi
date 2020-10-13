@@ -1,0 +1,75 @@
+% roadrunner.pi
+import sat.
+
+main =>
+    Fs = $[xcoord(1),  xcoord(2),  xcoord(3),
+           xcoord(4),  xcoord(5),  xcoord(6),
+           xcoord(7),                        
+           ycoord(1),  ycoord(2),  ycoord(3),
+           ycoord(4),  ycoord(5),  ycoord(6),
+           ycoord(7),                        
+           hill(4,5),  hill(4,1),  hill(1,3),
+           hill(2,5),  hill(7,2),  hill(3,5),
+           hill(4,6),  hill(1,4),  hill(6,4),
+           hill(2,1),                        
+           number(4,6,0),  number(1,4,2),    
+           number(6,4,1),  number(2,1,2)],
+    roadrunner(Fs).          
+
+main([File]) =>
+    Fs = read_file_terms(File),
+    roadrunner(Fs).
+
+roadrunner(Fs) =>
+    MaxY = max([X : $xcoord(X) in Fs]),
+    MaxX = max([Y : $xcoord(Y) in Fs]),
+    Laser = new_array(MaxX,MaxY),
+    Hill = new_array(MaxX,MaxY),
+    foreach ($hill(X,Y) in Fs)
+        Hill[X,Y] = 1,
+        Laser[X,Y] = 0
+    end,
+    Laser :: 0..1,
+    foreach ($number(X,Y,K) in Fs)
+        sum([Laser[X1,Y1] : (Dx,Dy) in [(-1,0),(1,0),(0,-1),(0,1)],
+		                    X1 = X+Dx, Y1 = Y+Dy, X1 >= 1, X1 =< MaxX, Y1 >= 1, Y1 =< MaxY]) #= K
+    end,
+    Road = new_array(MaxX,MaxY),
+    Road :: 0..1,
+    foreach (X in 1..MaxX, Y in 1..MaxY)
+        (Hill[X,Y] == 1 ->
+            Road[X,Y] = 0
+        ; 
+            attacked_positions(Hill,X,Y,MaxX,MaxY,AttackedPs),
+            sum([Laser[X1,Y1] : (X1,Y1) in [(X,Y)|AttackedPs]]) #= 0 #=> Road[X,Y],
+            Laser[X,Y] #=> #~Road[X,Y],
+            foreach ((X1,Y1) in AttackedPs)
+                Laser[X,Y] #=> #~Road[X1,Y1],
+                Laser[X,Y] #=> #~Laser[X1,Y1]
+            end
+        )
+    end,
+    NOneCells #= sum([Road[X,Y] : X in 1..MaxX, Y in 1..MaxY]),
+    subcircuit_grid(Road,NOneCells),   % a new built-in in version 2.7b16 
+    solve([$max(NOneCells)],(Laser,Road)),
+    printf("safecircuitlen(%d).\n",NOneCells).
+    
+attacked_positions(Hill,X,Y,MaxX,MaxY,AttackedPs) =>
+    attacked_positions(Hill,X-1,Y,-1,0,MaxX,MaxY,AttackedPs,AttackedPs1),
+    attacked_positions(Hill,X+1,Y,1,0,MaxX,MaxY,AttackedPs1,AttackedPs2),
+    attacked_positions(Hill,X,Y-1,0,-1,MaxX,MaxY,AttackedPs2,AttackedPs3),
+    attacked_positions(Hill,X,Y+1,0,1,MaxX,MaxY,AttackedPs3,[]).
+
+attacked_positions(Hill,X,Y,Dx,Dy,MaxX,MaxY,AttackedPs,AttackedPsR),
+    X >= 1, X =< MaxX,
+    Y >= 1, Y =< MaxY
+=>
+    (Hill[X,Y]==1 ->
+        AttackedPs = AttackedPsR
+    ;
+        AttackedPs = [(X,Y)|AttackedPs1],
+        attacked_positions(Hill,X+Dx,Y+Dy,Dx,Dy,MaxX,MaxY,AttackedPs1,AttackedPsR)
+    ).
+attacked_positions(_Hill,_X,_Y,_Dx,_Dy,_MaxX,_MaxY,AttackedPs,AttackedPsR) =>
+    AttackedPs = AttackedPsR.
+

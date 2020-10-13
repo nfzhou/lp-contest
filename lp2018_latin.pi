@@ -1,0 +1,74 @@
+import cp.
+
+main =>
+    latin($[row(1,-1,0,0,-1,0,1),
+            vertical(2,1,-1,1,1,-1,-1,1,-1,0),
+            row(3,1,0,-1,0,0,-1),
+            vertical(4,1,-1,-1,1,-1,1,1,-1,-1),
+            row(5,-1,-1,1,0,0,-1),
+            row(6,0,-1,0,1,0,1),
+            vertical(7,1,1,-1,-1,1,0,-1,1,-1),
+            row(8,1,-1,1,1,1,-1),
+            vertical(9,0,0,0,0,0,-1,-1,1,1),
+            row(10,-1,1,-1,-1,1,1),
+            row(11,-1,1,-1,1,-1,-1),
+            vertical(12,-1,1,1,-1,1,1,-1,1,0),
+            row(13,0,1,1,-1,0,1),
+            vertical(14,-1,1,-1,-1,1,-1,1,-1,1),
+            row(15,-1,1,0,1,0,-1)]).
+
+main([File]) =>
+    Fs = read_file_terms(File),
+    latin(Fs).
+
+latin(Fs) ?=>
+    SFs = sort(Fs),
+    A = new_array(9,9),
+    A :: 1..9,
+    foreach(Row in 1..9)
+        all_different(A[Row])
+    end,
+    foreach(Col in 1..9)
+        all_different([A[Row,Col] : Row in 1..9])
+    end,
+    foreach(Row in 1..3..7, Col in 1..3..7) 
+        Square = [A[Row+Dr,Col+Dc] : Dr in 0..2, Dc in 0..2],
+        all_different(Square)
+    end,
+    Os = {{O1,O2,O3,O4,O5,O6} : $row(_,O1,O2,O3,O4,O5,O6) in SFs},
+    constr_rel(A,Os),
+    Vs = {{O1,O2,O3,O4,O5,O6,O7,O8,O9} : $vertical(_,O1,O2,O3,O4,O5,O6,O7,O8,O9) in SFs},
+    transpose(A,A1),
+    transpose(Vs,Os1),
+    constr_rel(A1,Os1),
+    printf("solutions(%d).\n",count_all(solve(A))).
+latin(_Fs) =>    
+    print("solutions(0).\n").
+
+transpose(M,T) =>
+    NRows = len(M),
+    NCols = len(M[1]),
+    T = new_array(NCols,NRows),
+    foreach(R in 1..NRows, C in 1..NCols)
+        T[C,R] = M[R,C]
+    end.
+    
+constr_rel(A,Os) =>
+    foreach (I in 1..9)
+        constr_row(A[I],Os[I])
+    end.
+
+constr_row({C1,C2,C3,C4,C5,C6,C7,C8,C9},{O1,O2,O3,O4,O5,O6}) =>
+    constr_cell(C1,C2,O1),
+    constr_cell(C2,C3,O2),
+    constr_cell(C4,C5,O3),
+    constr_cell(C5,C6,O4),
+    constr_cell(C7,C8,O5),
+    constr_cell(C8,C9,O6).
+
+constr_cell(C1,C2,1) =>
+    C1+C2 #> 10.
+constr_cell(C1,C2,0) =>
+    C1+C2 #= 10.
+constr_cell(C1,C2,_) =>
+    C1+C2 #< 10.

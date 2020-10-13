@@ -1,0 +1,54 @@
+% billykid.pi
+import sat.
+
+main =>
+    Fs = $[town(1),         
+          town(2),         
+          town(3),         
+          town(4),         
+          town(5),         
+          town(6),         
+          connected(1,4),  
+          connected(1,2),  
+          connected(2,3),  
+          connected(3,4),  
+          connected(3,5),  
+          connected(4,5),  
+          connected(5,6),  
+          townsintravel(3)],
+    billykid(Fs).    
+
+main([File]) =>
+    Fs = read_file_terms(File),
+    billykid(Fs).
+
+billykid(Fs) =>
+    once member($townsintravel(Size),Fs),
+    N = max([V : $town(V) in Fs]),
+    A = new_array(N),
+    foreach (I in 1..N)
+        A[I] = []
+    end,
+    foreach($connected(X,Y) in Fs)
+        A[X] := [Y|A[X]],
+        A[Y] := [X|A[Y]]
+    end,
+    S = new_array(N),
+    S :: 0..1,
+    sum(S) #= NSelected,
+    foreach (I in 1..N)
+        Paths = find_all(Path, $path(I,Size,[],A,Path)),
+        foreach (P in Paths)
+            (last(P) > first(P) -> sum([S[V] : V in P]) #>= 1; true)
+        end
+    end,
+    solve([$min(NSelected)],S),
+    printf("selected(%d).\n",NSelected).
+
+table
+path(X,1,Path0,_A,Path) => Path = [X|Path0].
+path(X,Size,Path0,A,Path) =>
+    Neibs = A[X],
+    member(Neib,Neibs),
+    not member(Neib,Path0),
+    path(Neib,Size-1,[X|Path0],A,Path).

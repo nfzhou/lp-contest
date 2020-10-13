@@ -1,0 +1,30 @@
+main =>
+    mary(7,4321).
+     
+main([File]) =>
+    [$mary(M,N)] = read_file_terms(File),
+    mary(M,N).
+
+mary(M,N) =>
+    d(M,N,C),
+    printf("solution(%d).\n",C).
+
+d(M,N,C) => 
+    K = to_int(log(M,N)),
+    Ps = [M**I : I in K..-1..0],
+    count(Ps,N,C).
+
+table
+count([],0,C) => C = 1.
+count([1],_N,C) => C = 1.
+count([P|Ps],N,C) =>
+    Coe = N div P,
+    count_rec(P,Ps,Coe,N,C).
+
+count_rec(_P,_Ps,Coe,_N,C), Coe < 0 => C = 0.
+count_rec(P,Ps,Coe,N,C) =>
+    count(Ps,N-Coe*P,C1),
+    count_rec(P,Ps,Coe-1,N,C2),
+    C = C1+C2.
+
+

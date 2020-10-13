@@ -1,0 +1,67 @@
+import planner.
+
+main =>
+    Fs = $[vessels(5),
+           source(1),
+           people(3),
+           capacity(1, 12),
+           capacity(2, 3),
+           capacity(3, 3),
+           capacity(4, 3),
+           capacity(5, 2),
+           horizon(10)],
+    pour(Fs).
+
+main([File]) ?=>
+    Fs = read_file_terms(File),
+    pour(Fs).
+
+pour(Fs) ?=>
+    cl_facts(Fs),
+    source(SV),
+    capacity(SV,SK),
+    findall((0,K),(capacity(V,K),V !== SV)) = Pairs0,
+    sort_down([(SK,SK)|Pairs0]) = Pairs,
+    horizon(L),
+    people(M),
+    SK div M = Share,
+    Share*M = SK,
+    Shares = [Share : _ in 1..M],
+    plan({Pairs,Shares},L,_Plan,_Len),
+    println("split(yes).\n").
+pour(Fs) =>
+    println("split(no).\n").
+
+final({Pairs,Shares}) =>
+    equal_shares(Pairs,Shares).
+
+equal_shares(_,[]) => true.
+equal_shares([(Amount,_)|Pairs],[Amount|Shares]) =>
+    equal_shares(Pairs,Shares).
+equal_shares([(Amount,_)|Pairs],[Share|_]), Amount > Share => fail.
+equal_shares([(Amount,_)|Pairs],[Share|Shares]) =>
+    find_division(Pairs,Pairs1,Share-Amount),
+    equal_shares(Pairs1,Shares).
+
+find_division(Pairs,PairsR,0) => PairsR = Pairs.
+find_division(Pairs,PairsR,Share) =>
+    select((Amount,_),Pairs,Pairs1),
+    Amount =< Share,
+    find_division(Pairs1,PairsR,Share-Amount).
+
+action({Pairs,Shares},NState,Action,Cost) ?=>
+    select((Amount1,K1),Pairs,Pairs1),
+    Amount1 > 0, 
+    select((Amount2,K2),Pairs1,Pairs2),
+    Amount2 < K2,
+    (Amount1+Amount2 >= K2 ->
+        NAmount1 = Amount1-(K2-Amount2),
+        NAmount2 = K2
+    ; 
+        NAmount1 = 0,
+        NAmount2 = Amount1+Amount2
+    ),
+    NPairs = Pairs2.insert_ordered_down((NAmount1,K1)).insert_ordered_down((NAmount2,K2)),
+    NState = {NPairs,Shares},
+    Action = pour,
+    Cost = 1.

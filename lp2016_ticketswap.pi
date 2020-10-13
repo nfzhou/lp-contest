@@ -1,0 +1,43 @@
+% ticketswap.pi N.F. Zhou (with help by Alicia Villanueva)
+% picat ticketswap instanceFile
+%%
+main =>
+    Ps = $[passenger(mike, 1, 4),
+           passenger(anna, 2, 6),
+           passenger(susan, 4, 5),
+           passenger(steve, 6, 7)],
+    ticket(Ps).     
+
+main([File]) =>
+    Ps = read_file_terms(File),
+    ticket(Ps).
+
+ticket(Ps) =>
+    Ps1 = [(S,E) : $passenger(_,S,E) in Ps],
+    mta(sort(Ps1),Cost),
+    printf("loss(%w).\n",cost(Ps1)-Cost).
+  
+table (+,min)
+mta(Ps,Cost) ?=>
+    cost(Ps) = Cost.
+mta(Ps,Cost) =>
+    select(P1,Ps,Ps1),
+    select(P2,Ps1,Ps2),
+    overlap(P1,P2),
+    swap(P1,P2,P11,P22),
+    mta(Ps2.insert_ordered(P11).insert_ordered(P22),Cost).
+
+overlap((S1,_E1), (S2,E2)), S1 >= S2, S1 =< E2 => true.
+overlap((S1,E1), (S2,_E2)), S2 >= S1, S2 =< E1 => true.
+
+swap((S1,E1),(S2,E2),P1,P2) =>
+    P1 = (S2,E1),
+    P2 = (S1,E2),
+    S2 =< E1,
+    S1 =< E2.
+
+cost(Ps) = sum([C : (S,E) in Ps, cost_p(S,E,0,C,10)]).
+
+cost_p(E,E,C0,C,_D) => C=C0.
+cost_p(_,_,C0,C,0) => C=C0.
+cost_p(S,E,C0,C,D) => cost_p(S+1,E,C0+D/10,C,D-1).

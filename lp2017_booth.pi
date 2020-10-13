@@ -1,0 +1,59 @@
+import planner.
+
+main =>
+    Fs = $[room(3, 3),
+           booths(3),
+           dimension(1, 2, 1),
+           dimension(2, 2, 1),
+           dimension(3, 1, 1),
+           position(1, 0, 1),
+           position(2, 1, 2),
+           position(3, 0, 0),
+           target(3, 0, 2)],
+    booth(Fs).           
+
+main([File]) =>
+    Fs = read_file_terms(File),
+    booth(Fs).
+
+booth(Fs) =>
+    cl_facts(Fs),
+    room(RW,RH),
+    booths(N),
+    target(TB,TX,TY),
+    position(TB,TX0,TY0),
+    dimension(TB,TW,TH),
+    Booths = [{W,H,X,Y} : B in 1..N, dimension(B,W,H), position(B,X,Y), B !== TB].sort(),
+    StaticPart = {RW,RH,Booths},
+    best_plan_unbounded([{TW,TH,TX0,TY0,TX,TY},Booths,StaticPart],_Plan,PlanLen),
+    printf("moves(%w).\n",PlanLen).
+
+final([{_TW,_TH,TX,TY,TX,TY},Booths,{_,_,Booths}]) => true.
+
+action([{TW,TH,TX,TY,TX0,TY0},Booths,StaticPart@{RW,RH,_Booths0}],NState,Action,Cost) ?=>
+    move(RW,RH,TW,TH,TX,TY,Booths,TX1,TY1,Action),
+    NState = [{TW,TH,TX1,TY1,TX0,TY0},Booths,StaticPart],
+    Cost = 1.
+action([Target@{TW,TH,TX,TY,_TX0,_TY0},Booths,StaticPart@{RW,RH,_Booths0}],NState,Action,Cost) =>
+    select(Booth,Booths,Booths1),
+    Booth = {W,H,X,Y},
+    move(RW,RH,W,H,X,Y,[{TW,TH,TX,TY}|Booths1],X1,Y1,Action),
+    Booths2 = Booths1.insert_ordered({W,H,X1,Y1}),
+    NState = [Target,Booths2,StaticPart],
+    Cost = 1.
+
+move(RW,RH,W,H,X,Y,Booths,X1,Y1,Action) =>
+    (X1 = X-1,    X1 >= 0, Y1 = Y, Action = $left(W,H,X,Y)
+     ;
+     X1 = X+1, X1+W =< RW, Y1 = Y, Action = $right(W,H,X,Y)
+     ;
+     Y1 = Y-1, Y1 >= 0, X1 = X, Action = $down(W,H,X,Y)
+     ;    
+     Y1 = Y+1, Y1+H =< RH, X1 = X, Action = $up(W,H,X,Y)
+    ),
+    once not_overlap(W,H,X1,Y1,Booths).
+
+not_overlap(W,H,X,Y,Booths) =>
+    foreach ({W1,H1,X1,Y1} in Booths)
+        X >= X1+W1 || X1 >= X+W || Y >= Y1+H1 || Y1 >= Y+H
+    end.

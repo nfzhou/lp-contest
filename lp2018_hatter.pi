@@ -1,0 +1,51 @@
+%% This program counts the solutions that satisfy the constraints (all-different and disciples).
+%% It may take long time to count.
+%
+import cp.
+
+main =>
+    Fs = $[students(4),
+          disciples(1, 0),
+          disciples(2, 2),
+          disciples(3, 1),
+          disciples(4, 0)],
+    ha(Fs).
+
+test =>
+    Fs = $[students(4),
+    disciples(1, 0),
+    disciples(2, 2),
+    disciples(3, 1),
+    disciples(4, 1)],
+    ha(Fs).
+    
+main([File]) =>
+    Fs = read_file_terms(File),
+    ha(Fs).
+
+ha(Fs) ?=>
+    once member($students(N),Fs),
+    A = new_array(N),
+    foreach ($disciples(I,K) in Fs)
+        A[I] = K
+    end,
+    A[N] = 0,
+    V = new_array(N),
+    V :: 1..N,
+    all_different(V),
+    constr_desciples(1,N,A,V),
+    printf("solutions(%d).\n",count_all(solve(V)) mod 1000000007).
+ha(_Fs) =>
+    print("solutions(0).\n").
+    
+constr_desciples(I,N,_A,_V), I == N => true.
+constr_desciples(I,N,A,V) =>
+    foreach (J in I+1..I+A[I])
+        V[J] #< V[I]
+    end,
+    (A[I]+I+1 =< N ->
+        V[A[I]+I+1] #> V[I]
+    ;
+        true
+    ),
+    constr_desciples(I+1,N,A,V).

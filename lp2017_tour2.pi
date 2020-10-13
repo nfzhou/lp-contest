@@ -1,0 +1,59 @@
+import sat.
+
+main =>
+    Fs = $[people(3),
+           places(4),
+           preferences(4),
+           place(1, 2, 9, 12),
+           place(2, 1, 9, 12),
+           place(3, 3, 9, 15),
+           place(4, 6, 12, 18),
+           prefer(1, 1),
+           prefer(1, 2),
+           prefer(2, 3),
+           prefer(2, 4)],
+    tour(Fs).
+    
+main([File]) =>
+    Fs = read_file_terms(File),
+    tour(Fs).
+
+tour(Fs) =>
+    cl_facts(Fs),
+    people(N),
+    places(M),
+    Tour = new_array(M),
+    Tour :: 0..M,   % 0 means skip this place
+    all_different_except_0(Tour),
+    foreach (I in 1..M-1)
+        Tour[I] #= 0 #=> Tour[I+1] #= 0
+    end,
+    Visited = new_array(M),
+    Visited :: 0..1,
+    foreach (Loc in 1..M)
+        Visited[Loc] #= max([Tour[I] #= Loc : I in 1..M])
+    end,
+    Start = new_array(M),
+    End = new_array(M),
+    MaxC = max([C : Loc in 1..M, place(Loc,_,_,C)]),
+    Start :: 0..MaxC,
+    End :: 0..MaxC,
+    foreach (Loc in 1..M)
+        place(Loc,D,O,C),
+        foreach (I in 1..M)
+            Tour[I] #= Loc #=> Start[I] #>= O #/\ End[I] #= Start[I]+D #/\ End[I] #=< C
+        end
+    end,
+    foreach (I in 2..M)
+        Tour[I] #!= 0 #=> Start[I] #>= End[I-1]
+    end,
+    Satis = new_list(N),
+    foreach (P in 1..N)
+        Count = count_all(prefer(P,_)),
+        SatisP #= sum([Visited[Loc] : Loc in 1..M, prefer(P,Loc)]),
+        Satis[P] #= cond(SatisP #= Count, M, SatisP)
+    end,
+    Obj #= min(Satis),
+    solve($[max(Obj)],(Tour,Satis,Visited)),
+    printf("satisfaction(%w).\n",Obj).
+
