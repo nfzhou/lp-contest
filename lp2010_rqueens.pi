@@ -1,0 +1,18 @@
+import sat.
+
+main => test.
+
+test => rqueens(5,Q), writeln(Q).
+
+rqueens(N, Q) =>
+    once((between(1,N,Q),rqueens1(N, Q))).
+
+rqueens1(N, Q) =>
+    B = new_array(N,N),
+    B :: 0..1,
+    sum([B[I,J] : I in 1..N, J in 1..N]) #= Q,
+    foreach(I in 1..N, J in 1..N)
+        sum([B[I1,J1] : I1 in 1..N, J1 in 1..N, (I == I1 || J == J1 || I+J == I1+J1 || I-J == I1-J1)]) #> 0
+    end,
+    solve(B).	   
+

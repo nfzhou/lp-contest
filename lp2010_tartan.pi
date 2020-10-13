@@ -1,0 +1,23 @@
+main => test.
+
+test => tartan(5).
+
+tartan(N) =>
+    M is 2*N-1,
+    A = new_array(M,M),
+    fill(A,N,1,M),
+    foreach(I in 1..M, J in 1..M)
+        (var(A[I,J])->print(' ');printf("%s",A[I,J])), 
+        (J==M->nl;true)
+    end.	    
+
+fill(A,1,R0,_) =>
+    A[R0,R0] = "*".
+fill(A,N,R0,Rn),
+    N mod 2=:= 0
+=>
+    foreach(J in R0..Rn) A[R0,J] = "*", A[Rn,J] = "*" end,
+    fill(A,N-1,R0+1,Rn-1).
+fill(A,N,R0,Rn) =>
+    foreach(I in R0..Rn) A[I,R0] = "*", A[I,Rn] = "*" end,
+    fill(A,N-1,R0+1,Rn-1).

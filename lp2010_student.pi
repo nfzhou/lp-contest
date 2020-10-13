@@ -1,0 +1,44 @@
+main => test.
+
+test =>
+    student($[rule(append([],L,L),[]),
+	      rule(append([X|Xs],Ys,[X|Zs]), [append(Xs,Ys,Zs)])], 
+	    $append([1],[2,3],[2,1,3]),N),
+    writeln(N).
+
+student(Program,Goal,N),
+    between(0,99999,N),
+    change(N,Program,Goal)
+=>
+    true.
+
+change(0,Program,Init) =>
+    prov(Program,[Init]).
+change(N,Program,Init) =>
+    (Goal=Init
+     ;
+     select_goal(Program,Goal)
+    ),
+    change_goal(Goal),
+    change(N-1,Program,Init).
+
+select_goal([rule(_,Body)|_],Goal) ?=>
+    member(Goal,Body).
+select_goal([_|Rules],Goal) =>
+    select_goal(Rules,Goal).
+
+change_goal(Goal) =>
+    Goal.arity = Ari,
+    between(1,Ari-1,I1),
+    between(I1+1,Ari,I2),
+    Goal[I1] = A1, 
+    Goal[I2] = A2,
+    Goal[I1] := A2,
+    Goal[I2] := A1.
+
+prov(_Program,[]) => true.
+prov(Program,[G|Gs]) =>
+    member(Rule,Program),
+    copy_term(Rule) = $rule(G,Body),
+    prov(Program,Body++Gs).
+

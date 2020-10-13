@@ -1,0 +1,43 @@
+import cp.
+
+main =>
+  Facts = $[num(4),
+            cap(5),
+            refill(2),
+            fun(1,4),
+            fun(2,1),
+            fun(3,2),
+            fun(4,3)],
+    games(Facts).
+
+main([File]) =>
+    Facts = read_file_terms(File),
+    games(Facts).
+
+games(Facts) =>
+    cl_facts(Facts),
+    num(N),
+    VArr = {V : I in 1..N, fun(I,V)},
+    cap(T),
+    refill(K),
+    IArr = new_array(N),      % IArr[I]: number of tokens before game I
+    IArr :: 1..T,
+    IArr[1] = T,
+    OArr = new_array(N),      % OArr[I]: number of tokens after game I
+    OArr :: 0..T-1,
+    SArr = new_array(N),      % SArr[I]: number of tokens spent on game I
+    SArr :: 1..T,
+    foreach (I in 1..N)
+        if I<N then
+            IArr[I+1] #= min(OArr[I]+K, T)
+        end,
+        SArr[I] #= IArr[I] - OArr[I]
+    end,
+    TotalFun #= sum([SArr[I]*VArr[I] : I in 1..N]),
+    solve([$max(TotalFun)], (IArr,OArr,SArr)),
+    printf("total_fun(%w). \n",TotalFun).
+%    writeln($i(IArr)),
+%    writeln($o(OArr)),
+%    writeln($s(SArr)).
+
+    

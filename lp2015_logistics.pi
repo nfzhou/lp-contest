@@ -1,0 +1,38 @@
+main =>
+    Facts = $[graph_size(6),
+              start(1),
+              dest(6),
+              edge(1,2,4),
+              edge(1,3,2),
+              edge(2,3,5),
+              edge(2,4,10),
+              edge(3,5,3),
+              edge(4,5,4),
+              edge(4,6,11)],
+    logistics(Facts).
+    
+main([File]) =>
+    Facts = read_file_terms(File),
+    logistics(Facts).
+
+logistics(Facts) =>
+    IEdges = [$edge(Y,X,C) : $edge(X,Y,C) in Facts],
+    cl_facts(IEdges++Facts, $[edge(+,-,-)]),
+    Dests = find_all(V,dest(V)).sort(),
+    start(V0),
+    find_tree([V0],Dests,Tree,Cost),
+    writeln(Tree),
+    printf("cost(%w).\n",Cost).
+
+table (+,+,-,min)
+find_tree(_FrontVs,[],Tree,Cost) => Cost=0, Tree=[].
+find_tree(FrontVs,Dests,Tree,Cost) => 
+    member(V,FrontVs),
+    edge(V,NextV,W),
+    not member(NextV,FrontVs),
+    (member(NextV,Dests) -> Dests1 = delete(Dests,NextV); Dests1 = Dests),
+    Tree = [(V,NextV,W)|TreeR],
+    find_tree(insert_ordered(FrontVs,NextV),Dests1,TreeR,Cost1),
+    Cost = Cost1+W.
+
+    

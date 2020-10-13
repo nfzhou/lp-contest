@@ -1,0 +1,51 @@
+main => test.
+
+test =>
+   Grid = [[_,_],[$pipe(yes,yes,no,no),_]],
+   Pieces = $[pipe(yes,no,no,yes),pipe(no,yes,yes,no),pipe(no,no,yes,yes)],
+   plumber(Grid, Pieces),
+   writeln(Grid).
+/*
+   Grid = [[pipe(no,yes,yes,no),pipe(no,no,yes,yes)],
+           [pipe(yes,yes,no,no),pipe(yes,no,no,yes)]].
+*/
+
+plumber(Grid, Ps) =>
+    Grid.length = N,
+    TagPs = [(P,_) : P in Ps],
+    foreach(I in 1..N, J in 1..N) place(Grid,I,J,N,TagPs) end.
+
+place(Grid,I,J,N,Ps) =>
+    place_piece(Grid,I,J,Ps,P),
+    (I==1->no_up(P); I==N->no_down(P); true),
+    (J==1->no_left(P); J==N->no_right(P); true),
+    I1 is I+1,
+    (I1=<N ->
+	 place_piece(Grid,I1,J,Ps,Pd),    
+	 match(P,Pd,down)
+     ;
+         true
+    ),
+    J1 is J+1,
+    (J1=<N ->
+	 place_piece(Grid,I,J1,Ps,Pr),    
+	 match(P,Pr,right)
+     ;
+         true
+    ).
+
+place_piece(Grid,I,J,Ps,P) =>
+    P = Grid[I,J],
+    (var(P) -> member((P,Tag),Ps),var(Tag),Tag=1; true).
+
+match(pipe(X,_,_,_),pipe(_,_,X,_),down) => true.
+match(pipe(_,_,_,X),pipe(_,X,_,_),right) => true.
+
+no_up(pipe(no,_,_,_)) => true.
+
+no_right(pipe(_,no,_,_)) => true.
+
+no_down(pipe(_,_,no,_)) => true.
+
+no_left(pipe(_,_,_,no)) => true.
+

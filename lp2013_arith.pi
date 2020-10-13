@@ -1,0 +1,68 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% arith.pi
+%%% by Neng-Fa Zhou
+%%% http://people.cs.kuleuven.be/~bart.demoen/PrologProgrammingContests/2013/probs2013.pdf
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+main => test.
+
+test =>
+    maxval($tree(tree(6,8),tree(2,2)), [mult, mult, plus], Max),
+    writeln(Max).
+
+test2 =>
+    maxval($tree(tree(6,8),tree(2,2)), [mult, min, plus], Max),
+    writeln(Max).
+
+maxval(Tree,Ops,Val) =>
+    maxval(Tree,Ops,_,Val).
+
+table (+,+,-,max)
+maxval(Tree,Ops,OpsO,Val),integer(Tree) => Val=Tree,OpsO=Ops.
+maxval(tree(T1,T2),Ops,OpsO,Val) ?=>
+    select(Op,Ops,Ops1),
+    minval(T1,Ops1,Ops2,V1),
+    minval(T2,Ops2,OpsO,V2),
+    app(Op,V1,V2) = Val.
+maxval(tree(T1,T2),Ops,OpsO,Val) ?=>
+    select(Op,Ops,Ops1),
+    minval(T1,Ops1,Ops2,V1),
+    maxval(T2,Ops2,OpsO,V2),
+    app(Op,V1,V2) = Val.
+maxval(tree(T1,T2),Ops,OpsO,Val) ?=>
+    select(Op,Ops,Ops1),
+    maxval(T1,Ops1,Ops2,V1),
+    minval(T2,Ops2,OpsO,V2),
+    app(Op,V1,V2) = Val.
+maxval(tree(T1,T2),Ops,OpsO,Val) =>
+    select(Op,Ops,Ops1),
+    maxval(T1,Ops1,Ops2,V1),
+    maxval(T2,Ops2,OpsO,V2),
+    app(Op,V1,V2) = Val.
+
+table (+,+,-,min)
+minval(Tree,Ops,OpsO,Val),integer(Tree) => Val=Tree,OpsO=Ops.
+minval(tree(T1,T2),Ops,OpsO,Val) ?=>
+    select(Op,Ops,Ops1),
+    minval(T1,Ops1,Ops2,V1),
+    minval(T2,Ops2,OpsO,V2),
+    app(Op,V1,V2) = Val.
+minval(tree(T1,T2),Ops,OpsO,Val) ?=>
+    select(Op,Ops,Ops1),
+    minval(T1,Ops1,Ops2,V1),
+    maxval(T2,Ops2,OpsO,V2),
+    app(Op,V1,V2) = Val.
+minval(tree(T1,T2),Ops,OpsO,Val) ?=>
+    select(Op,Ops,Ops1),
+    maxval(T1,Ops1,Ops2,V1),
+    minval(T2,Ops2,OpsO,V2),
+    app(Op,V1,V2) = Val.
+minval(tree(T1,T2),Ops,OpsO,Val) =>
+    select(Op,Ops,Ops1),
+    maxval(T1,Ops1,Ops2,V1),
+    maxval(T2,Ops2,OpsO,V2),
+    app(Op,V1,V2) = Val.
+
+app(plus,V1,V2) = V1+V2.
+app(min,V1,V2) = V1-V2.
+app(mult,V1,V2) = V1*V2.

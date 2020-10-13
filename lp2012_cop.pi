@@ -1,0 +1,16 @@
+main => test, write(ok).
+
+test => cop($[q(start,d,gotcha,start)],$[q(start,d,gotcha,q2),q(q2,d,gotcha,start)]).
+
+cop(Graph1,Graph2) =>
+    p(Graph1,start,gotcha,t,Path1,_),
+    p(Graph2,start,gotcha,t,Path2,_),
+    Path1=Path2.
+
+table (+,+,+,+,-,min)
+p(_,X,X,_,Path,Len) => Path=[],Len=0.
+p(Graph,X,Y,Pid,Path,Len) =>
+    (member($q(X,Id,Z,_),Graph); member($q(X,Id,_,Z),Graph)),
+    p(Graph,Z,Y,Id,Path1,Len1),
+    (Id==Pid->Path=Path1,Len=Len1; Path=[Id|Path1],Len is Len1+1).
+    

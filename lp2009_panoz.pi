@@ -1,0 +1,16 @@
+import cp.
+
+main => test.
+
+test =>
+    panoz([(0,1),(0,2),(4,0),(4,3)],Sol),writeln(Sol).
+
+panoz(Ps, Sol) =>
+    Xs = [X : (X,_) in Ps],
+    Ys = [Y : (_,Y) in Ps],
+    X :: min(Xs)..max(Xs),
+    Y :: min(Ys)..max(Ys),
+    Sol = (X,Y),
+    Max #= max([max(X1-X,X-X1)+max(Y1-Y,Y-Y1) : (X1,Y1) in Ps]),
+    solve($[min(Max)],[X,Y]).
+

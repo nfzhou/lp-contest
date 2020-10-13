@@ -1,0 +1,23 @@
+main => test.
+
+test => eric($fork(treasury(10),treasury(20)),7,T),writeln(T).
+
+eric(C, N, T) => eric(C, N, _, T), T>0.
+
+eric(treasury(T), N, NN, NT), N>=2 => NN=2,NT=T.
+eric(fork(L,R), N, NN, T),                  % both forks
+    N1 is N-2, N1>=0,                       % 1 entry 1 exit
+    eric(L, N1, NN1, T1),
+    N2 is N1-NN1-1,N2>=0,                   % 1 extra guard
+    eric(R, N2, NN2, T2)
+=>
+    T is max(T1, T2),
+    NN is NN1+NN2.
+eric(fork(L,_), N, NN, T),                  % left fork only
+    N1 is N-2,N1>=0,                        % 1 entry 1 exit
+    eric(L, N1, NN, T)
+=>
+    true.
+eric(_, _, NN,T) => NN=0, T=0.
+
+

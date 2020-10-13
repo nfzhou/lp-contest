@@ -1,0 +1,41 @@
+import sat.
+
+main => test.
+
+test =>
+    bishop(8, NR),
+    writeln(NR).
+
+bishop(N, NR) =>
+    N>1,
+    NB :: 2..N,
+    NR+NB #= N+1,
+    Rs = new_array(N,N),
+    Bs = new_array(N,N),
+    Rs :: 0..1,
+    Bs :: 0..1,
+    %
+    sum([Rs[I,J] : I in 1..N, J in 1..N]) #= NR,
+    sum([Bs[I,J] : I in 1..N, J in 1..N]) #= NB,
+    foreach(I in 1..N, J in 1..N, I1 in 1..N, J1 in 1..N) 
+        if (I==I1 || J==J1) then
+            if (I,J) != (I1,J1) then Rs[I,J] #=> #~ Rs[I1,J1] end,
+            Rs[I,J] #=> #~ Bs[I1,J1]
+        end,
+        if (I+J==I1+J1 || I-J == I1-J1) then
+            if (I,J) != (I1,J1) then Bs[I,J] #=> #~ Bs[I1,J1] end,
+            Bs[I,J] #=> #~ Rs[I1,J1] 
+        end
+    end,
+    solve([$max(NR)],vars((Rs,Bs))),
+    write_matrix(Rs),
+    nl,nl,
+    write_matrix(Bs).
+
+write_matrix(M) =>
+    foreach(I in 1..M.length)
+        foreach(J in 1..M[1].length)
+            print(M[I,J])
+	end,
+        nl
+    end.

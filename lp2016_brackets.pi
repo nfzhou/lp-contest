@@ -1,0 +1,40 @@
+% brackets.pi N.F. Zhou (with help by Alicia Villanueva)
+%%
+main =>
+    As = $[bracket(0,1),
+           bracket(1,1),
+           bracket(2,1),
+           bracket(3,-1),
+           bracket(4,-1),
+           bracket(5,-1)],
+    breackets(As).
+
+main([File]) =>
+    As = read_file_terms(File),
+    breackets(As).
+
+breackets(As) =>
+    s(As,[],Rs),
+    area(Rs) = A,
+    printf("black_squares(%w).\n",A).
+
+s([bracket(_,1),bracket(_,-1)|S],Sr,Rs) =>
+    Rs = [$r(1,1,[])|Rs1],
+    s(S,Sr,Rs1).
+s([bracket(_,1)|S],Sr,Rs) =>
+    Rs = [$r(W,H,Cs)|Rs1],
+    s(S,S1,Cs),
+    wh(Cs) = (N,W1,H1),
+    W = W1+N+1,
+    H = H1+1,
+    S1 = [$bracket(_,-1)|S2],
+    s(S2,Sr,Rs1).  
+s(S,Sr,Rs) => Sr = S, Rs = [].
+
+wh(Rs) = (N,TW,TH) =>
+    N = len(Rs),
+    TW = sum([W : $r(W,_,_) in Rs]),
+    TH = max([H : $r(_,H,_) in Rs]).
+  
+area([]) = 0.
+area([r(W,H,Cs)|Rs]) = W*H - area(Cs) + area(Rs).

@@ -1,0 +1,51 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Rubik's Cube (cube.pi)
+% by Nuno Lopes
+% Example queries
+%   cube([front],  4).
+%   cube([left,left], 2).
+%   cube([left,front], 15).
+%   cube([up,left,down,front], 45).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+main => test.
+
+test => cube([up,left,down,front], M), writeln(M).
+
+cube(L, M) =>
+    S = $cube([1,2,3,4], [5,6,7,8], [9,10,11,12], [13,14,15,16], [17,18,19,20], [21,22,23,24]),
+    apply(S, S, L, 0, M).
+
+
+apply(S, F, L, I, M) =>
+    apply_moves(L, S, S1),
+    I1 is I + 1,
+    (S1 == F -> 
+	M = I1
+    ;
+        apply(S1, F, L, I1, M)
+    ).
+
+apply_moves([], S, SF) => SF=S.
+apply_moves([M|Ms], S, SF) =>
+    apply_moves(Ms, move(M, S), SF).
+
+% cube representation: cube(FRONT, BACK, UP, DOWN, LEFT, RIGHT)
+move(front,
+    cube([F1,F2,F3,F4], B, [U1,U2,U3,U4], [D1,D2,D3,D4], [L1,L2,L3,L4], [R1,R2,R3,R4])) =
+    $cube([F4,F1,F2,F3], B, [U1,U2,L2,L3], [R4,R1,D3,D4], [L1,D1,D2,L4], [U4,R2,R3,U3]).
+move(back,
+    cube(F, [B1,B2,B3,B4], [U1,U2,U3,U4], [D1,D2,D3,D4], [L1,L2,L3,L4], [R1,R2,R3,R4])) =
+    $cube(F, [B4,B1,B2,B3], [R2,R3,U3,U4], [D1,D2,L4,L1], [U2,L2,L3,U1], [R1,D3,D4,R4]).
+move(up,
+    cube([F1,F2,F3,F4], [B1,B2,B3,B4], [U1,U2,U3,U4], D, [L1,L2,L3,L4], [R1,R2,R3,R4])) =
+    $cube([R1,R2,F3,F4], [B1,B2,L1,L2], [U4,U1,U2,U3], D, [F1,F2,L3,L4], [B3,B4,R3,R4]).
+move(down,
+    cube([F1,F2,F3,F4], [B1,B2,B3,B4], U, [D1,D2,D3,D4], [L1,L2,L3,L4], [R1,R2,R3,R4])) =
+    $cube([F1,F2,L3,L4], [R3,R4,B3,B4], U, [D4,D1,D2,D3], [L1,L2,B1,B2], [R1,R2,F3,F4]).
+move(left,
+    cube([F1,F2,F3,F4], [B1,B2,B3,B4], [U1,U2,U3,U4], [D1,D2,D3,D4], [L1,L2,L3,L4], R)) =
+    $cube([U1,F2,F3,U4], [D1,B2,B3,D4], [B1,U2,U3,B4], [F1,D2,D3,F4], [L4,L1,L2,L3], R).
+move(right,
+    cube([F1,F2,F3,F4], [B1,B2,B3,B4], [U1,U2,U3,U4], [D1,D2,D3,D4], L, [R1,R2,R3,R4])) =
+    $cube([F1,D2,D3,F4], [B1,U2,U3,B4], [U1,F2,F3,U4], [D1,B2,B3,D4], L, [R4,R1,R2,R3]).
+

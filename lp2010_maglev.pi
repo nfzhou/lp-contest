@@ -1,0 +1,25 @@
+main => test.
+
+test => 
+    maglev($[station(a,b,[c,d]), station(b,z,[a,c,d])],a,z,Cost),
+    writeln(Cost).
+
+table (+,+,+,min)
+maglev(L,S,F,Cost),
+    member($station(S,F,_),L)
+=> 
+    Cost=0.
+maglev(L,S,F,Cost) =>
+    (    member($station(S,N,Rs),L),
+	 maglev(L,N,F,Cost)
+    ;
+         append(L1,[$station(S,N,Rs)],L2,L),
+	 append(Rs1,[R],Rs2,Rs),
+	 append(Rs1,[N],Rs2,NRs),  % switch N and R, R becomes the preferred next station
+	 append(L1,[$station(S,R,NRs)],L2,NL),
+	 maglev(NL,N,F,Cost1),
+	 Cost is Cost1+1
+    ).
+
+
+	

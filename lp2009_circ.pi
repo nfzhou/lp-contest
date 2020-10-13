@@ -1,0 +1,28 @@
+main => test.
+
+test =>
+   circ($[edge(a,b), edge(a,h), edge(a,i), edge(b,c), edge(b,g),
+	  edge(i,k), edge(c,d), edge(c,e), edge(c,f), edge(k,l), edge(k,m)],
+	Three, Len),
+   writeln((Len,Three)). %Len = 14 Three = [d,e,l]
+
+circ(Es, Three, Len) =>
+    cl_facts(Es,$[edge(+,-),edge(-,+),edge(+,+)]),
+    Nodes = [A : $edge(A,_) in Es] ++ [B : $edge(_,B) in Es],
+    sort_remove_dups(Nodes) = Ns,
+    L = [$three(Dist,A,B,C) : A in Ns, B in Ns, C in Ns, (A@<B, B@<C, circ(A,B,C,Dist))],
+    sort_down(L) = [$three(Len,A,B,C)|_],
+    Three=[A,B,C].
+
+circ(A, B, C, Dist) =>
+    path(A,B,Dab), 
+    path(A,C,Dac), 
+    path(B,C,Dbc),
+    Dist = Dab+Dac+Dbc.
+
+table (+, +, min)
+path(A,B,Dist) ?=> (edge(A,B); edge(B,A)), Dist=1.
+path(A,B,Dist) =>
+    (edge(A,C); edge(C,A)),
+    path(C,B,Dist1),
+    Dist = Dist1+1.

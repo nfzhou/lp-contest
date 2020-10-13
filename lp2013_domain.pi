@@ -1,0 +1,78 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% domain.pi
+%%% by Neng-Fa Zhou
+%%% http://people.cs.kuleuven.be/~bart.demoen/PrologProgrammingContests/2013/probs2013.pdf
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+import cp.
+
+main => test.
+
+test => test1.
+
+test1 => domain([X,Y],$[X+Y = 2],[-1006,1006],Domain), writeln(Domain).
+% Domain = [1,1]
+test2 => domain([X,Y],$[X+Y = 0, X*Y = -1, X > 0],[-500,500],Domain), writeln(Domain).
+% Domain = [-1,1]
+test3 => domain([X,Y],$[X+Y=1],[-1000,1000],Domain), writeln(Domain).
+% No % because no domain has a unique solution
+test4 => domain([X,Y],$[X*Y = 3, X > 1, Y > 1],[-1000,1000],Domain),writeln(Domain).
+% No % because there is no solution for any domain
+test5 => domain([X,Y],$[X-Y=0],[-2020,-20],Domain),writeln(Domain).
+% Domain = [-666,-666] % just one of the many correct answers
+
+domain(Vs,Cs,Domain0,Domain) =>
+    initialize_table,
+    csp(Domain0,Domain,_,(Vs,Cs)).
+
+table (+,+,min,nt)
+csp(Domain0@[L,U],Domain,Size,CSP),
+    solve_csp0(CSP,Domain0,Count)
+=>
+    (    Count == 1, Domain = Domain0, Size = U-L+1
+     ;
+         L1 = L+1, L1 <= U,
+         csp([L1,U],Domain,Size,CSP)
+     ;	    
+         U1 = U-1, L < U1,
+         csp([L,U1],Domain,Size,CSP)
+    ).
+
+solve_csp0((Vs,Cs),[L,U],_Count) ?=>
+    get_global_map().clear(),
+    once(solve_csp(Vs,Cs,L,U)),
+    fail.
+solve_csp0(_CSP,_Domain,Count) =>
+    M = get_global_map(),
+    M.has_key(count),
+    Count = M.get(count).
+    
+solve_csp(Vs,Cs,L,U) =>
+    Vs :: L..U,
+    post_cs(Cs),
+    M = get_global_map(),
+    solve(Vs),
+    (M.has_key(count) ->
+        M.put(count,2)
+    ;
+        M.put(count,1),
+        fail
+    ).
+         			  
+post_cs([]) => true.
+post_cs([V1+V2=I|Cs]) =>
+    V1+V2 #= I,
+    post_cs(Cs).
+post_cs([V1-V2=I|Cs]) =>
+    V1-V2 #= I,
+    post_cs(Cs).
+post_cs([V1*V2=I|Cs]) =>
+    V1*V2 #= I,
+    post_cs(Cs).
+post_cs([V1>V2|Cs]) =>
+    V1 #> V2,
+    post_cs(Cs).
+post_cs([V1<V2|Cs]) =>
+    V1 #< V2,
+    post_cs(Cs).
+      		       
+   

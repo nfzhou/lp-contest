@@ -1,0 +1,36 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% travel.pi
+%%% by Neng-Fa Zhou
+%%% http://people.cs.kuleuven.be/~bart.demoen/PrologProgrammingContests/2013/probs2013.pdf
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+main => test.
+
+test =>
+    maximalpleasure($[journey(bozo,[heverlee, bertem, tervuren]),
+		     journey(bozo,[heverlee, korbeekdijle, tervuren]),
+		     journey(dork,[hammemille, korbeekdijle, tervuren, sterrebeek]),
+		     journey(dork,[hammemille, overijse, tervuren, sterrebeek])],
+		    10,3,P),
+    writeln(P).
+
+maximalpleasure(Js,PDay,PNight,P) =>
+    Ts = [T : $journey(T,_) in Js],
+    sort_remove_dups(Ts) = Ts1,
+    mp(Ts1,_,P,(Js,PDay,PNight)).
+
+table (+,-,max,nt)
+mp([],Plans,P,_) => Plans=[],P=0.
+mp([T|Ts],Plans,P,GData@(Js0,PDay,PNight)) =>
+    Plans=[Plan|Plans1],
+    member($journey(T,Plan),Js0),
+    mp(Ts,Plans1,P1,GData),
+    P = P1+sum([pleasure(Plan,Plan1,PDay,PNight) : Plan1 in Plans1]).
+
+pleasure([],_,_PDay,_PNight) = 0.
+pleasure([_],_,_PDay,_PNight) = 0.
+pleasure(_,[],_PDay,_PNight) = 0.
+pleasure(_,[_],_PDay,_PNight) = 0.
+pleasure([From,To|J],[From,To|J1],PDay,PNight) = 2*PDay+2*PNight+pleasure([To|J],[To|J1],PDay,PNight).
+pleasure([_,To|J],[_,To|J1],PDay,PNight) = 2*PNight+pleasure([To|J],[To|J1],PDay,PNight).
+pleasure([_,To|J],[_,To1|J1],PDay,PNight) = pleasure([To|J],[To1|J1],PDay,PNight).

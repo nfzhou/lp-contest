@@ -1,0 +1,28 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% icecream.pi
+%%% by Neng-Fa Zhou
+%%% http://people.cs.kuleuven.be/~bart.demoen/PrologProgrammingContests/2013/probs2013.pdf
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+main => test.
+
+test => icecream(5).
+
+icecream(N) =>
+    Margin = N,
+    printf("%*s()\n",Margin,""),
+    Spaces = 0,
+    foreach(I in 1..N)
+        Margin := Margin-1,
+        printf("%*s((%*s))\n",Margin,"",Spaces,""),
+	Spaces := Spaces+2
+    end,
+    foreach(I in 1..N+1) print("/\\") end,
+    nl,
+    Margin := 0,
+    Spaces := N*2,
+    foreach(I in 1..N+1)
+        printf("%*s\\%*s/\n",Margin,"",Spaces,""),
+        Spaces := Spaces-2,
+	Margin := Margin+1
+    end,
+	nl.

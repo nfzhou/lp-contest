@@ -1,0 +1,51 @@
+% elevator.pi N.F. Zhou (with help by Alicia Villanueva)
+% picat elevator instance
+%%
+main =>
+    As = $[top(10),
+           elevators(4),
+           elevator(1,0,5),
+           elevator(2,5,10),
+           elevator(3,5,7),
+           elevator(4,7,10)],
+    elevator(As).
+    
+main([File]) =>
+    As = read_file_terms(File),
+    elevator(As).
+
+elevator(As) =>
+    once member($top(K),As),
+    once member($elevators(N),As),
+    Es = [$e(I,F,F,T,1) : I in 1..N, member($elevator(I,F,T),As)],
+    simulate(0,K,sort(Es),T),
+    printf("min_time(%w).\n",T).
+
+table(+,+,+,min)
+simulate(K,K,_,T) => T = 0.
+simulate(F,K,Es,T) ?=>
+    update0(Es,Es1),
+    simulate(F,K,Es1,T1),
+    T = T1+1.
+simulate(F,K,Es,T) ?=>
+    member($e(_,F,_,_,D),Es),
+    update0(Es,Es1),
+    simulate(F+D,K,Es1,T1),
+    T = T1+1.
+
+update0(Es0,Es) =>
+    Es = [E : E0 in Es0, update(E0,E)].
+   
+update(e(I,F,LF,T,D),E) =>
+    F1 = F+D,
+    update1($e(I,F1,LF,T,D),E).
+
+update1(e(I,F,LF,T,_D),E), F > T =>
+    F1 = T-1, D1 = -1,
+    E = $e(I,F1,LF,T,D1).
+update1(e(I,F,LF,T,_D),E), F == LF-1 =>
+    F1 = LF+1, D1 = 1,
+    E = $e(I,F1,LF,T,D1).
+update1(E0,E) => E = E0.
+
+

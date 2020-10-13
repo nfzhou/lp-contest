@@ -1,0 +1,25 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Example queries:
+% ?- omelet(1,1,D)
+%    D = 1
+% ?- omelet(2,1,D)
+%    D=1
+% ?- omelet(2,7,D)
+%    D=4
+% ?- omelet(3,7,D)
+%    D=3
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+main => test.
+
+test => omelet(3,7,D), writeln(D).
+
+table  (+,+,min)
+omelet(_,0,NTries) => NTries=0.
+omelet(_,1,NTries) => NTries=1.
+omelet(1,H,NTries) => NTries=H.
+omelet(N,H,NTries) =>
+    between(1,H,L),            % make a choice
+    omelet(N-1,L-1,NTries1),   % the egg breaks
+    omelet(N,H-L,NTries2),     % the egg survives
+    NTries is max(NTries1,NTries2)+1.

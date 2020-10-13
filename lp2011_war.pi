@@ -1,0 +1,30 @@
+main => test.
+
+test =>
+    war($[joint(m,5,5,5),joint(p,10,5,5),joint(s,5,1,1)],
+	$[street(m,s),street(p,s)],
+	N),
+    writeln(N).
+
+war(Js,Ss,NW) =>
+    Js.length = N,
+    Ws = [W : $joint(X,_,_,_) in Js, nw(X,Js,Ss,N,W)],
+    sort(Ws) = [NW|_].
+
+nw(X,Js,Ss,N,W) =>
+    nw(X,Js,Ss,[],N,W).
+
+table (+,+,+,+,+,min)
+nw(X,Js,_Ss,_Path,1,W) =>
+    (member($joint(X,Ne,In,De),Js)->true;true),
+    W is max(In+De,Ne).
+nw(X,Js,Ss,Path,C,W) =>
+    (    member($street(X,Y),Ss)
+     ;
+         member($street(Y,X),Ss)
+    ),
+    not  member(Y,Path), 
+    C1 is C-1,
+    nw(Y,Js,Ss,[X|Path],C1,W1),
+    (member($joint(X,Ne,In,De),Js)->true;true),
+    W is max(W1+In+De,Ne).

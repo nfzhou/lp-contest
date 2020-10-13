@@ -1,0 +1,49 @@
+main => test.
+
+test => race($[1-1,1-2],4,4,Winner), writeln(Winner).
+
+race(Ps,N,M,W) =>
+    L = [(Len,P) : P in Ps, path(P,1,1,N,M,Len)],
+    sort(L) = SL,
+    SL=[(_,W)|_].
+
+table (+,+,+,+,+,min)
+path(_,N,M,N,M,Len) => Len=0.
+path(P,I,J,N,M,Len) =>
+    next(P,I,J,I1,J1,N,M),
+    path(P,I1,J1,N,M,Len1),
+    Len is Len1+1.
+
+next(D1-D2,I,J,I1,J1,N,M) ?=>
+  I1 is I+D1, J1 is J+D2,
+  I1>=1, I1=<N,
+  J1>=1, J1=<M.
+next(D1-D2,I,J,I1,J1,N,M) ?=>
+  I1 is I-D1, J1 is J+D2,
+  I1>=1, I1=<N,
+  J1>=1, J1=<M.
+next(D1-D2,I,J,I1,J1,N,M) ?=>
+  I1 is I+D1, J1 is J-D2,
+  I1>=1, I1=<N,
+  J1>=1, J1=<M.
+next(D1-D2,I,J,I1,J1,N,M) ?=>
+  I1 is I-D1, J1 is J-D2,
+  I1>=1, I1=<N,
+  J1>=1, J1=<M.
+%
+next(D1-D2,I,J,I1,J1,N,M) ?=>
+  I1 is I+D2, J1 is J+D1,
+  I1>=1, I1=<N,
+  J1>=1, J1=<M.
+next(D1-D2,I,J,I1,J1,N,M) ?=>
+  I1 is I-D2, J1 is J+D1,
+  I1>=1, I1=<N,
+  J1>=1, J1=<M.
+next(D1-D2,I,J,I1,J1,N,M) ?=>
+  I1 is I+D2, J1 is J-D1,
+  I1>=1, I1=<N,
+  J1>=1, J1=<M.
+next(D1-D2,I,J,I1,J1,N,M) =>
+  I1 is I-D2, J1 is J-D1,
+  I1>=1, I1=<N,
+  J1>=1, J1=<M.

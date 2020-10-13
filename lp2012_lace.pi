@@ -1,0 +1,50 @@
+main => test.
+
+test => lace(5).
+
+lace(N) =>
+    grid_size(N,S),
+    Grid = new_array(S,S),
+    R0 is S // 2 + 1, C0 is R0,
+    foreach(I in 1..N) draw(I,Grid,R0,C0) end,
+    foreach(R in 1..S)
+        foreach(C in 1..S)
+	    G = Grid[C,R], 
+            (var(G) -> print(' '); print('*'))
+	end,
+        nl
+    end.
+    
+draw(I,Grid,R0,C0),
+    I mod 2=:=0
+=>
+    grid_size(I,S), 
+    foreach(Offset in 0..S//2)
+        Grid[R0-Offset,C0-S//2+Offset] = '*',
+        Grid[R0-Offset,C0+S//2-Offset] = '*',
+	Grid[R0+Offset,C0-S//2+Offset] = '*',
+	Grid[R0+Offset,C0+S//2-Offset] = '*'
+    end.
+draw(I,Grid,R0,C0) =>
+    grid_size(I,S), 
+    foreach(C in C0-S//2..C0+S//2)
+        Grid[R0-S//2,C] = '*',
+        Grid[R0+S//2,C] = '*'
+    end,	    
+    foreach(R in R0-S//2..R0+S//2)
+        Grid[R,C0-S//2] = '*',
+        Grid[R,C0+S//2] = '*'
+    end.
+	
+table (+,-)
+grid_size(1,S) => S=3.
+grid_size(N,S),
+    0 is N mod 2
+=>
+    N1 is N-1,
+    grid_size(N1,S1),
+    S is S1 + S1 // 2 * 2.
+grid_size(N,S) =>
+    N1 is N - 1,
+    grid_size(N1,S).
+

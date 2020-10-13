@@ -1,0 +1,16 @@
+main => test.
+
+test => split([i,i,c,l,c,f,p,p],[i,c,l,p],[i,c,f,p],H), writeln(H).
+
+split(L,S1,S2,H) => split(L,S1,S2,0,H,_).
+
+table (+,+,+,+,-,min)
+split([],[],[],_,How,Count) => How = [], Count = 0.
+split([X|Xs],[X|S1],S2,PrevT,How,Count) ?=>
+    How = [1|HowR],
+    split(Xs,S1,S2,1,HowR,Count1),
+    Count = cond(PrevT == 1, Count1, Count1 + 1).
+split([X|Xs],S1,[X|S2],PrevT,How,Count) =>
+    How = [2|HowR],    
+    split(Xs,S1,S2,2,HowR,Count1),
+    Count = cond(PrevT == 2, Count1, Count1 + 1).

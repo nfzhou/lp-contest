@@ -1,0 +1,47 @@
+import cp.
+
+main => test.
+
+test => pattern(3,L), writeln(L).
+
+pattern(N,L) =>
+    M is 2**N,
+    LBs = new_list(M),
+    foreach(Bs in LBs)
+        Bs = new_list(N), 
+        Bs :: 0..1
+    end,
+    Bs0 = [0 : _ in 1..N],
+    LBs=[Bs0|LBs1],
+    last(LBs) = Bs1,
+    constr([Bs1|LBs]),
+    solve(LBs),
+    N1 is N-1,
+    Dum = new_list(N1),
+    once(append(LBs2,Dum,LBs1)),
+    flat(LBs2,L1),
+    Bs0++L1 = L.
+    
+constr([_]) => true.
+constr([Bs1,Bs2|LBs]) =>
+    [_|Sub] = Bs1,
+    once(append(Sub,[_],Bs2)),
+    foreach(Bs in LBs) diff(Bs,Bs2) end,
+    constr([Bs2|LBs]).
+
+diff(Bs1,Bs2) =>
+    Disj = 0,
+    foreach({B1,B2} in zip(Bs1,Bs2))
+        Disj := Disj #\/ (B1 #!= B2)
+    end,
+    call(Disj).
+
+flat([],L) => L=[].
+flat([Bs|LBs],L) =>
+    L = [B|L1],
+    last(Bs) = B,
+    flat(LBs,L1).
+    
+    
+    
+    
