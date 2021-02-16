@@ -40,8 +40,8 @@ main([File]) =>
 
 parse_lines([Line1,CCLine,RCLine|Lines],N,M,CC,RC,BlockGrid,BlockMap) =>
     [N,M] = [to_int(Token) : Token in Line1.split()],    % M:  the number of required connections
-    CC = [to_int(Token) : Token in CCLine.split()],
-    RC = [to_int(Token) : Token in RCLine.split()],
+    CC = {to_int(Token) : Token in CCLine.split()},
+    RC = {to_int(Token) : Token in RCLine.split()},
     BlockGrid = new_array(N,N),
     BlockMap = new_map(),
     foreach ({R,Line} in zip(1..N, Lines))

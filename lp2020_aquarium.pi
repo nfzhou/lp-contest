@@ -25,8 +25,8 @@ main([File]) =>
 
 parse_lines([NStr,CCLine,RCLine|Lines],N,CC,RC,BlockGrid) =>
     N = to_int(NStr),
-    CC = [to_int(Token) : Token in CCLine.split()],
-    RC = [to_int(Token) : Token in RCLine.split()],
+    CC = {to_int(Token) : Token in CCLine.split()},
+    RC = {to_int(Token) : Token in RCLine.split()},
     BlockGrid = new_array(N,N),
     foreach ({R,Line} in zip(1..N,Lines))
         foreach ({C,Token} in zip(1..N,split(Line)))
