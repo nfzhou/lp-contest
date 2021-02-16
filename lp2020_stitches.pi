@@ -1,0 +1,142 @@
+%% https://github.com/alviano/lpcp-contest-2020/tree/master/problem-2
+%% usage: picat stitches instance.in
+%% by Neng-Fa Zhou, 2/2021
+
+import sat, util.
+
+main([File]) =>
+    Lines = read_file_lines(File),
+    parse_lines(Lines,N,M,CC,RC,BlockGrid,BlockMap),   % CC - column clues, RC - row clues
+    Grid = new_array(N,N),
+    foreach (R in 1..N, C in 1..N)
+        Grid[R,C] = [Hu,Hd,Hl,Hr],   % Holes, at most one can be 1
+        (R == 1 -> Hu = 0; true),
+        (R == N -> Hd = 0; true),
+        (C == 1 -> Hl = 0; true),
+        (C == N -> Hr = 0; true)
+    end,
+    Vars = vars(Grid),
+    Vars :: 0..1,
+    %
+    StitchMap = new_map(),
+    foreach (R in 1..N, C in 1..N)
+        Grid[R,C] = [Hu,Hd,Hl,Hr],
+        sum([Hu,Hd,Hl,Hr]) #=< 1,
+        (R == 1 -> true; constrain_up(N,Grid,BlockGrid,BlockMap,StitchMap,R,C,R-1,C,Hu)),
+        (R == N -> true; constrain_down(N,Grid,BlockGrid,BlockMap,StitchMap,R,C,R+1,C,Hd)),
+        (C == 1 -> true; constrain_left(N,Grid,BlockGrid,BlockMap,StitchMap,R,C,R,C-1,Hl)),
+        (C == N -> true; constrain_right(N,Grid,BlockGrid,BlockMap,StitchMap,R,C,R,C+1,Hr))
+    end,
+    foreach (Stitches in values(StitchMap))
+        sum(Stitches) #= M
+    end,
+    foreach (I in 1..N)
+        sum([Hu+Hd+Hl+Hr : J in 1..N, Grid[I,J] = [Hu,Hd,Hl,Hr]]) #= RC[I],
+        sum([Hu+Hd+Hl+Hr : J in 1..N, Grid[J,I] = [Hu,Hd,Hl,Hr]]) #= CC[I]
+    end,
+    %
+    solve(Vars),
+    output(Grid,N).
+
+parse_lines([Line1,CCLine,RCLine|Lines],N,M,CC,RC,BlockGrid,BlockMap) =>
+    [N,M] = [to_int(Token) : Token in Line1.split()],    % M:  the number of required connections
+    CC = [to_int(Token) : Token in CCLine.split()],
+    RC = [to_int(Token) : Token in RCLine.split()],
+    BlockGrid = new_array(N,N),
+    BlockMap = new_map(),
+    foreach ({R,Line} in zip(1..N, Lines))
+        foreach ({C,Token} in zip(1..N, split(Line)))
+            BlockNum = to_int(Token),
+            BlockGrid[R,C] = BlockNum,
+            Ps = BlockMap.get(BlockNum,[]),
+            BlockMap.put(BlockNum,[(R,C)|Ps])
+        end
+    end.
+
+constrain_up(N,Grid,BlockGrid,BlockMap,StitchMap,R,C,R1,C1,Hu) =>
+    Grid[R1,C1] = [_,Hd,_,_],
+    Hu = Hd,
+    BlockNum = BlockGrid[R,C],
+    NeibBlockNum = BlockGrid[R1,C1],    
+    (BlockNum == NeibBlockNum ->
+        Hu = 0
+    ;BlockNum < NeibBlockNum, not StitchMap.has_key((BlockNum,NeibBlockNum)) ->
+        Ps = BlockMap.get(BlockNum),
+        collect_stitches(N,(BlockNum,NeibBlockNum),Ps,Grid,BlockGrid,NeibBlockNum,StitchMap)
+    ;
+        true
+    ).
+
+constrain_down(N,Grid,BlockGrid,BlockMap,StitchMap,R,C,R1,C1,Hd) =>
+    Grid[R1,C1] = [Hu,_,_,_],
+    Hu = Hd,
+    BlockNum = BlockGrid[R,C],
+    NeibBlockNum = BlockGrid[R1,C1],    
+    (BlockNum == NeibBlockNum ->
+        Hu = 0
+    ;BlockNum < NeibBlockNum, not StitchMap.has_key((BlockNum,NeibBlockNum)) ->
+        Ps = BlockMap.get(BlockNum),
+        collect_stitches(N,(BlockNum,NeibBlockNum),Ps,Grid,BlockGrid,NeibBlockNum,StitchMap)
+    ;
+        true
+    ).
+
+constrain_left(N,Grid,BlockGrid,BlockMap,StitchMap,R,C,R1,C1,Hl) =>
+    Grid[R1,C1] = [_,_,_,Hr],
+    Hl = Hr,
+    BlockNum = BlockGrid[R,C],
+    NeibBlockNum = BlockGrid[R1,C1],    
+    (BlockNum == NeibBlockNum ->
+        Hl = 0
+    ;BlockNum < NeibBlockNum, not StitchMap.has_key((BlockNum,NeibBlockNum)) ->
+        Ps = BlockMap.get(BlockNum),
+        collect_stitches(N,(BlockNum,NeibBlockNum),Ps,Grid,BlockGrid,NeibBlockNum,StitchMap)
+    ;
+        true
+    ).
+
+constrain_right(N,Grid,BlockGrid,BlockMap,StitchMap,R,C,R1,C1,Hr) =>
+    Grid[R1,C1] = [_,_,Hl,_],
+    Hl = Hr,
+    BlockNum = BlockGrid[R,C],
+    NeibBlockNum = BlockGrid[R1,C1],    
+    (BlockNum == NeibBlockNum ->
+        Hl = 0
+    ;BlockNum < NeibBlockNum, not StitchMap.has_key((BlockNum,NeibBlockNum)) ->
+        Ps = BlockMap.get(BlockNum),
+        collect_stitches(N,(BlockNum,NeibBlockNum),Ps,Grid,BlockGrid,NeibBlockNum,StitchMap)
+    ;
+        true
+    ).
+
+collect_stitches(_N,_Key,[],_Grid,_BlockGrid,_NeibBlockNum,_StitchMap) => true.
+collect_stitches(N,Key,[(R,C)|Ps],Grid,BlockGrid,NeibBlockNum,StitchMap) =>
+    Grid[R,C] = [Hu,Hd,Hl,Hr],
+    (R > 1, BlockGrid[R-1,C] == NeibBlockNum -> collect_stitch(Key,StitchMap,Hu); true),
+    (R < N, BlockGrid[R+1,C] == NeibBlockNum -> collect_stitch(Key,StitchMap,Hd); true),
+    (C > 1, BlockGrid[R,C-1] == NeibBlockNum -> collect_stitch(Key,StitchMap,Hl); true),
+    (C < N, BlockGrid[R,C+1] == NeibBlockNum -> collect_stitch(Key,StitchMap,Hr); true),
+    collect_stitches(N,Key,Ps,Grid,BlockGrid,NeibBlockNum,StitchMap).
+
+collect_stitch(Key,StitchMap,Hole) =>
+    Holes = StitchMap.get(Key,[]),
+    NewHoles = [Hole|Holes],
+    StitchMap.put(Key,NewHoles).
+
+output(Grid,N) =>
+    HCount = 0, VCount = 0,
+    foreach (R in 1..N, C in 1..N)
+        Grid[R,C] = [Hu,Hd,Hl,Hr],
+        (Hd == 1 -> VCount := VCount+1; true),
+        (Hr == 1 -> HCount := HCount+1; true)
+    end,
+    println(HCount),
+    foreach (R in 1..N, C in 1..N)
+        Grid[R,C] = [Hu,Hd,Hl,Hr],
+        (Hr == 1 -> printf("%w %w\n", R, C); true)
+    end,
+    println(VCount),    
+    foreach (R in 1..N, C in 1..N)
+        Grid[R,C] = [Hu,Hd,Hl,Hr],
+        (Hd == 1 -> printf("%w %w\n", R, C); true)
+    end.

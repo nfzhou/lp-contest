@@ -1,11 +1,12 @@
 %% https://github.com/alviano/lpcp-contest-2020/tree/master/problem-1
 %% usage: picat aquarium instance.in
+%% by Neng-Fa Zhou, 2/2021
 
 import sat, util.
 
 main([File]) =>
     Lines = read_file_lines(File),
-    pass_lines(Lines,N,CC,RC,BlockGrid),   % CC - column clues, RC - row clues
+    parse_lines(Lines,N,CC,RC,BlockGrid),   % CC - column clues, RC - row clues
     Grid = new_array(N,N),
     Grid :: 0..1,
     foreach (I in 1..N)
@@ -22,7 +23,7 @@ main([File]) =>
         nl
     end.
 
-pass_lines([NStr,CCLine,RCLine|Lines],N,CC,RC,BlockGrid) =>
+parse_lines([NStr,CCLine,RCLine|Lines],N,CC,RC,BlockGrid) =>
     N = to_int(NStr),
     CC = [to_int(Token) : Token in CCLine.split()],
     RC = [to_int(Token) : Token in RCLine.split()],
