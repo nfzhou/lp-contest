@@ -1,7 +1,7 @@
 /* LPCP Contest 2020 Problem 4: Masyu
     https://github.com/alviano/lpcp-contest-2020/tree/master/problem-4 
     by Neng-Fa Zhou
-    inspired by Peter Bernschneider's solution at https://raw.githubusercontent.com/bernschneider/lp-contest/
+    inspired by Peter Bernschneider's solution at https://github.com/bernschneider/lp-contest
     requires the latest version of Picat to run.
 */
 
@@ -67,7 +67,7 @@ constrain_b(N,EMap,R,C) =>
 
 constrain_paths(_N,_EMap,[],Bs) =>
     sum(Bs) #>= 1.
-constrain_paths(N,EMap,[P|Ps],Bs), all_coords_in(N,P) =>
+constrain_paths(N,EMap,[P|Ps],Bs), all_coords_on_board(N,P) =>
     constrain_path(EMap,P,1,B1),
     RevP = reverse(P),
     constrain_path(EMap,RevP,1,B2),
@@ -82,7 +82,7 @@ constrain_path(EMap,[(R,C),(R1,C1)|P],Conj,B) =>
 constrain_path(_EMap,_,Conj,B) =>
     B #<=> Conj.
 
-all_coords_in(N,P) =>
+all_coords_on_board(N,P) =>
     foreach ((R,C) in P)
         R >= 1, R =< N,
         C >= 1, C =< N
