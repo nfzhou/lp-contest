@@ -1,9 +1,14 @@
+%% LPCP Programming Contest 2020, Problem 1, Stitches 
 %% https://github.com/alviano/lpcp-contest-2020/tree/master/problem-2
-%% usage: picat stitches instance.in
 %% by Neng-Fa Zhou, 2/2021
+%
+%% to use:: picat stitches instance_file
 
 import sat, util.
 
+main =>
+    main(["sample.in"]).
+    
 main([File]) =>
     Lines = read_file_lines(File),
     parse_lines(Lines,N,M,CC,RC,BlockGrid,BlockMap),   % CC - column clues, RC - row clues

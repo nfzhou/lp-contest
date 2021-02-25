@@ -1,0 +1,140 @@
+%% LPCP Programming Contest 2020, Problem 3, Tapa
+%% https://github.com/alviano/lpcp-contest-2020/tree/master/problem-3
+%% by Neng-Fa Zhou, 2/2021
+%% based on Peter Bernschneider's program at https://github.com/bernschneider/lp-contest
+%
+%% to use:: picat tapa instance_file
+
+import util, sat.
+
+main =>
+    main(["sample.in"]).
+    
+main([File]) =>
+    read_data(File,N,Board,Grid,FirstClueR,FirstClueC),
+    foreach (R in 1..N, C in 1..N, nonvar(Board[R,C]))
+        neibs(N,R,C,Neibs),
+        constrain_cell_with_clues(Board[R,C],Grid,Neibs.to_array())
+    end,
+    % 2x2 black areas must be avoided:
+    foreach (R in 1..N-1, C in 1..N-1)
+        Grid[R,C] + Grid[R,C+1] + Grid[R+1,C] + Grid[R+1,C+1] #< 4
+    end,
+    % All black cells must be orthogonally connected:
+    connected_grid(N,Grid,FirstClueR,FirstClueC),
+    solve(Grid),
+    foreach (R in 1..N)
+        foreach (C in 1..N)
+            (Grid[R,C] == 1 -> print('*'); print('.'))
+        end,
+        nl
+    end.
+
+read_data(File,N,Board,Grid,FirstClueR,FirstClueC) =>
+    IS = open(File),
+    Line1 = read_line(IS),
+    [N,NClues] = [to_int(Token) : Token in split(Line1)],
+    Board = new_array(N,N),
+    Grid = new_array(N,N),
+    foreach (_I in 1..NClues)
+        Line = read_line(IS),
+        [R,C,_|Clues] = [to_int(Token) : Token in split(Line)],
+        (Clues != [0], var(FirstClueR) -> FirstClueR = R, FirstClueC = C; true),
+        Board[R,C] = Clues,
+        Grid[R,C] = 0
+    end,
+    Grid :: 0..1,          % the cell (R,C) is blackened iff Grid[R,C] = 1
+    close(IS).
+
+neibs(N,R,C,Neibs) =>
+    Neibs = [(R1,C1) :  (R1,C1) in [(R-1,C-1), (R-1,C), (R-1,C+1), (R,C+1),
+                                    (R+1,C+1), (R+1,C), (R+1,C-1), (R,C-1)],
+                                     R1 >= 1, R1 =< N,
+                                     C1 >= 1, C1 =< N].
+
+% use NeibArr as a circular array
+constrain_cell_with_clues([0],Grid,NeibArr) =>  % all are white
+    sum([Grid[R,C] : (R,C) in NeibArr]) #= 0.
+constrain_cell_with_clues(Clues,Grid,NeibArr) =>
+    Size = len(NeibArr),
+    OccArr = new_array(Size),
+    Layouts = findall(Layout, layout(Clues,Size,NeibArr,OccArr,Layout)),
+    Bs = [],
+    foreach (Layout in Layouts)
+        Len = length(Layout),
+        B :: 0..1,
+        LayoutBs = [cond(I > 0, Grid[R,C], #~Grid[R,C]) : I in Layout, NeibArr[abs(I)] = (R,C)],
+        B #= min(LayoutBs),
+        Bs := [B|Bs]
+    end,
+    sum(Bs) #>= 1.
+
+% nondeterministically returns a layout for a block of Clue number of neighboring cells
+layout([],Size,_NeibArr,OccArr,Layout) =>
+    Layout = [-I : I in 1..Size, var(OccArr[I])].  % these cells must be white
+layout([Clue|Clues],Size,NeibArr,OccArr,Layout) =>
+    between(1,Size,I0),
+    layout_aux(Clue,Size,NeibArr,OccArr,I0,Layout,Layout1),
+    prev_index(Size,I0,I1),
+    (neib_coords(NeibArr,I0,I1), var(OccArr[I1]) ->
+        Layout1 = [-I1|Layout2],   % leave a gap
+        OccArr[I1] = 1
+    ;
+        Layout1 = Layout2
+    ),   
+    layout(Clues,Size,NeibArr,OccArr,Layout2).
+
+layout_aux(Clue,Size,NeibArr,OccArr,I,Layout,LayoutR) =>
+    var(OccArr[I]),
+    OccArr[I] = 1,
+    Layout = [I|Layout1],
+    next_index(Size,I,I1),
+    (Clue == 1 ->
+        (neib_coords(NeibArr,I,I1), var(OccArr[I1]) ->
+            Layout1 = [-I1|LayoutR],  % leave a gap
+            OccArr[I1] = 1
+        ;
+            Layout1 = LayoutR
+        )
+    ;
+        neib_coords(NeibArr,I,I1),
+        layout_aux(Clue-1,Size,NeibArr,OccArr,I1,Layout1,LayoutR)
+    ).
+
+next_index(Size,I,I1) =>
+    NextI = I+1,
+    (NextI > Size -> I1 = 1; I1 = NextI).
+
+prev_index(Size,I,I1) =>
+    PrevI = I-1,
+    (PrevI == 0 -> I1 = Size; I1 = PrevI).
+
+% (R0,C0) and (R,C) are orthogonal neighbors
+neib_coords(NeibArr,I0,I1) =>
+    NeibArr[I0] = (R0,C0),
+    NeibArr[I1] = (R1,C1),
+    (    R0 == R1,
+         abs(C0-C1) == 1
+     ;
+         C0 == C1,
+         abs(R0-R1) == 1
+    ).
+
+% all the 1-cells are connected
+connected_grid(N,Grid,FirstClueR,FirstClueC) =>
+    neibs(N,FirstClueR,FirstClueC,FirstClueNeibs),
+    FirstClueNeibIs = [(R-1)*N+C : (R,C) in FirstClueNeibs],
+    FirstI :: FirstClueNeibIs,
+    foreach ((R,C) in FirstClueNeibs)
+        I = (R-1)*N+C,
+        FirstI #= I #=> Grid[R,C]
+    end,        
+    Max = N*N,
+    DistA = new_array(Max),
+    DistA :: 0..Max,
+    element(FirstI,DistA,0),
+    foreach (R in 1..N, C in 1..N)
+        Neibs = [(R1,C1) : (R1,C1) in [(R-1,C),(R+1,C),(R,C-1),(R,C+1)], R1 >= 1, R1 =< N, C1 >= 1, C1 =< N],
+        I = (R-1)*N+C,
+        (I #!= FirstI #/\ Grid[R,C]) #=> DistA[I] #= 1+min([DistA[I1]*Grid[R1,C1]+Max*(1-Grid[R1,C1]) : (R1,C1) in Neibs, I1 = (R1-1)*N+C1])
+    end.

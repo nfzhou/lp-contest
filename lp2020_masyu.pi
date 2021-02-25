@@ -1,9 +1,9 @@
-/* LPCP Contest 2020 Problem 4: Masyu
-    https://github.com/alviano/lpcp-contest-2020/tree/master/problem-4 
-    by Neng-Fa Zhou
-    inspired by Peter Bernschneider's solution at https://github.com/bernschneider/lp-contest
-    requires the latest version of Picat to run.
-*/
+%% LPCP Programming Contest 2020, Problem 4, Masyu
+%% https://github.com/alviano/lpcp-contest-2020/tree/master/problem-4
+%% by Neng-Fa Zhou, 2/2021
+%% inspired by Peter Bernschneider's program at https://github.com/bernschneider/lp-contest
+%
+%% to use:: picat masyu instance_file
 
 import util, sat.
 

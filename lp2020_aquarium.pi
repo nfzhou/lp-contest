@@ -1,9 +1,14 @@
+%% LPCP Programming Contest 2020, Problem 1, Aquarium 
 %% https://github.com/alviano/lpcp-contest-2020/tree/master/problem-1
-%% usage: picat aquarium instance.in
 %% by Neng-Fa Zhou, 2/2021
+%
+%% to use:: picat aquarium instance_file
 
 import sat, util.
 
+main =>
+    main(["sample.in"]).
+    
 main([File]) =>
     Lines = read_file_lines(File),
     parse_lines(Lines,N,CC,RC,BlockGrid),   % CC - column clues, RC - row clues
