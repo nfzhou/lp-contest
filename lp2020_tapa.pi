@@ -61,7 +61,6 @@ constrain_cell_with_clues(Clues,Grid,NeibArr) =>
     Layouts = findall(Layout, layout(Clues,Size,NeibArr,OccArr,Layout)),
     Bs = [],
     foreach (Layout in Layouts)
-        Len = length(Layout),
         B :: 0..1,
         LayoutBs = [cond(I > 0, Grid[R,C], #~Grid[R,C]) : I in Layout, NeibArr[abs(I)] = (R,C)],
         B #= min(LayoutBs),
