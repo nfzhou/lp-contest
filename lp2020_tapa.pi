@@ -136,6 +136,6 @@ connected_grid(N,Grid,FirstClueR,FirstClueC) =>
     foreach (R in 1..N, C in 1..N)
         Neibs = [(R1,C1) : (R1,C1) in [(R-1,C),(R+1,C),(R,C-1),(R,C+1)], R1 >= 1, R1 =< N, C1 >= 1, C1 =< N],
         I = (R-1)*N+C,
-		#~Grid[R,C] #<=> DistA[I] #= Max,
+        #~Grid[R,C] #<=> DistA[I] #= Max,
         (I #!= FirstI #/\ Grid[R,C]) #=> DistA[I] #= 1+min([DistA[I1] : (R1,C1) in Neibs, I1 = (R1-1)*N+C1])
     end.
