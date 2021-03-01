@@ -1,8 +1,8 @@
-%% LPCP Programming Contest 2020, Problem 5, Shingoki
-%% https://github.com/alviano/lpcp-contest-2020/tree/master/problem-5
-%% by Neng-Fa Zhou, 2/2021
-%
-%% to use:: picat shigoki instance_file
+/* LPCP Contest 2020 Problem : Shingoki
+   https://github.com/alviano/lpcp-contest-2020/tree/master/problem-5
+   by Neng-Fa Zhou, 2/2020
+   requires the latest version of Picat to run.
+*/
 
 import util, sat.
 
@@ -47,40 +47,70 @@ read_data(File,N,Board,Grid) =>
     Grid :: 0..1,          % the cell (R,C) is in the circuit iff Grid[R,C] = 1
     close(IS).
 
-% all the cells that are 1 are connected
-connected_grid(Grid) =>
-    NRows = len(Grid),
-	NCols = len(Grid[1]),
-    A = {Grid[R,C] : R in 1..NRows, C in 1..NCols},
-	Size = NRows*NCols,
-	Dist = new_array(Size),
-	Dist :: 0..Size,
-	FirstIn :: 1..Size,
-	element(FirstIn,A,1),
-	element(FirstIn,Dist,0),
-	foreach (R in 1..NRows, C in 1..NCols)
-	    I = (R-1)*NCols+C,
-	    NeibIs = [I1 : (R1,C1) in [(R-1,C),(R+1,C),(R,C-1),(R,C+1)], R1 >= 1, R1 =< NRows, C1 >= 1, C1 =< NCols, I1 = (R1-1)*NCols+C1)],
-		(I #!= FirstIn #/\ A[I])  #=> Dist[I] #= 1 + min([Dist[I1]*A[I1]+Size*(1-A[I1]) : I1 in NeibIs])
-	end,
+% White circles must be passed through in a straight line.
+% The clue numbers in the circles show the sum of the lengths of the 2 straight lines going out of that circle. 
+constrain_w(N,EMap,R,C,Clue) =>
+    Ps = [],
+    foreach (D1 in 1..Clue-1, D2 = Clue-D1)
+        V = [(R1,C) : R1 in R-D1..R+D2],
+        P1 = [(R-D1,C-1)] ++ V ++ [(R+D2,C-1)],
+        P2 = [(R-D1,C-1)] ++ V ++ [(R+D2,C+1)],
+        P3 = [(R-D1,C+1)] ++ V ++ [(R+D2,C-1)],
+        P4 = [(R-D1,C+1)] ++ V ++ [(R+D2,C+1)],
+        H = [(R,C1) : C1 in C-D1..C+D2],
+        P5 = [(R-1,C-D1)] ++ H ++ [(R-1,C+D2)],
+        P6 = [(R-1,C-D1)] ++ H ++ [(R+1,C+D2)],
+        P7 = [(R+1,C-D1)] ++ H ++ [(R-1,C+D2)],
+        P8 = [(R+1,C-D1)] ++ H ++ [(R+1,C+D2)],
+        Ps := [P1,P2,P3,P4,P5,P6,P7,P8|Ps]
+    end,
+    constrain_paths(N,EMap,Ps,[]).
 
+% Black circles must be turned upon.
+% The clue numbers in the circles show the sum of the lengths of the 2 straight lines going out of that circle. 
+constrain_b(N,EMap,R,C,Clue) =>
+    Ps = [],
+    foreach (D1 in 1..Clue-1, D2 = Clue-D1)
+        L1 = [(R1,C) : R1 in R-D1..R] ++ [(R,C1) : C1 in C-1..-1..C-D2],
+        P1 = [(R-D1,C-1)] ++ L1 ++ [(R-1,C-D2)],
+        P2 = [(R-D1,C-1)] ++ L1 ++ [(R+1,C-D2)],
+        P3 = [(R-D1,C+1)] ++ L1 ++ [(R-1,C-D2)],
+        P4 = [(R-D1,C+1)] ++ L1 ++ [(R+1,C-D2)],
+        L2 = [(R1,C) : R1 in R-D1..R] ++ [(R,C1) : C1 in C+1..C+D2],
+        P5 = [(R-D1,C-1)] ++ L2 ++ [(R-1,C+D2)],
+        P6 = [(R-D1,C-1)] ++ L2 ++ [(R+1,C+D2)],
+        P7 = [(R-D1,C+1)] ++ L2 ++ [(R-1,C+D2)],
+        P8 = [(R-D1,C+1)] ++ L2 ++ [(R+1,C+D2)],
+        L3 = [(R,C1) : C1 in C+D1..-1..C] ++ [(R1,C) : R1 in (R+1)..R+D2],
+        P9  = [(R-1,C+D1)] ++ L3 ++ [(R+D2,C-1)],
+        P10  = [(R-1,C+D1)] ++ L3 ++ [(R+D2,C+1)],
+        P11  = [(R+1,C+D1)] ++ L3 ++ [(R+D2,C-1)],
+        P12  = [(R+1,C+D1)] ++ L3 ++ [(R+D2,C+1)],
+        L4 = [(R,C1) : C1 in C-D1..C] ++ [(R1,C) : R1 in (R+1)..R+D2],
+        P13  = [(R-1,C-D1)] ++ L4 ++ [(R+D2,C-1)],
+        P14  = [(R-1,C-D1)] ++ L4 ++ [(R+D2,C+1)],
+        P15  = [(R+1,C-D1)] ++ L4 ++ [(R+D2,C-1)],
+        P16  = [(R+1,C-D1)] ++ L4 ++ [(R+D2,C+1)],
+        Ps := [P1,P2,P3,P4,P5,P6,P7,P8,P9,P10,P11,P12,P13,P14,P15,P16|Ps]
+    end,
+    constrain_paths(N,EMap,Ps,[]).
 
 constrain_paths(_N,_EMap,[],Bs) =>
     sum(Bs) #>= 1.
 constrain_paths(N,EMap,[P|Ps],Bs), all_coords_on_board(N,P) =>
-    constrain_path(EMap,P,1,B1),
+    constrain_path(EMap,P,[],B1),
     RevP = reverse(P),
-    constrain_path(EMap,RevP,1,B2),
+    constrain_path(EMap,RevP,[],B2),
     constrain_paths(N,EMap,Ps,[B1,B2|Bs]).
 constrain_paths(N,EMap,[_|Ps],Bs) =>
     constrain_paths(N,EMap,Ps,Bs).
 
-constrain_path(EMap,[(R,C),(R1,C1)|P],Conj,B) =>
+constrain_path(EMap,[(R,C),(R1,C1)|P],ConjBs,B) =>
     EdgeIn = EMap.get({R,C,R1,C1}),
-    Conj1 = (EdgeIn #/\Conj),
-    constrain_path(EMap,[(R1,C1)|P],Conj1,B).
-constrain_path(_EMap,_,Conj,B) =>
-    B #<=> Conj.
+    ConjBs1 = [EdgeIn|ConjBs],
+    constrain_path(EMap,[(R1,C1)|P],ConjBs1,B).
+constrain_path(_EMap,_,ConjBs,B) =>
+    B #= min(ConjBs).
 
 all_coords_on_board(N,P) =>
     foreach ((R,C) in P)
