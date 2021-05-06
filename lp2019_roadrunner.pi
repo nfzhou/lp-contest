@@ -46,7 +46,7 @@ roadrunner(Fs) =>
         )
     end,
     K :: 1..MaxX*MaxY,
-    hcp_grid(Road,_Es,K), 
+    hcp_grid(Road,_Es,K),  % new built-in in Picat version 3.1
     solve([$max(K)],Road),
     printf("safecircuitlen(%d).\n",K).
 

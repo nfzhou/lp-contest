@@ -11,7 +11,7 @@ main =>
     
 main([File]) =>
     read_data(File,N,Board,Grid),
-    hcp_grid(Grid,Es),   % new built-in in Picat version 3.0#5
+    hcp_grid(Grid,Es),   % new built-in in Picat version 3.1
     EMap = new_map(),
     foreach ({(R1,C1),(R2,C2),B} in Es)
         EMap.put({R1,C1,R2,C2}, B)
