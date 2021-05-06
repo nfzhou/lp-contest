@@ -45,7 +45,7 @@ roadrunner(Fs) =>
             sum([Laser[X1,Y1] : (X1,Y1) in [(X,Y)|Ps]]) #= 0 #=> Road[X,Y]
         )
     end,
-	K :: 1..MaxX*MaxY,
+    K :: 1..MaxX*MaxY,
     hcp_grid(Road,_Es,K), 
     solve([$max(K)],Road),
     printf("safecircuitlen(%d).\n",K).

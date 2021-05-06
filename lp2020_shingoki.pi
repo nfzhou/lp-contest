@@ -11,12 +11,11 @@ main =>
     
 main([File]) =>
     read_data(File,N,Board,Grid),
-	writeln($size(N)),	
     hcp_grid(Grid,Es),   % new built-in in Picat version 3.0#5
-	EMap = new_map(),
-	foreach ({(R1,C1),(R2,C2),B} in Es)
-	    EMap.put({R1,C1,R2,C2}, B)
-	end,
+    EMap = new_map(),
+    foreach ({(R1,C1),(R2,C2),B} in Es)
+        EMap.put({R1,C1,R2,C2}, B)
+    end,
     foreach(R in 1..N, C in 1..N)
         if Board[R,C] = $w(Clue) then
             constrain_w(N,EMap,R,C,Clue)
