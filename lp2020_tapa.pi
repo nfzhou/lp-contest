@@ -11,17 +11,17 @@ main =>
     main(["sample.in"]).
     
 main([File]) =>
-    read_data(File,N,Board,Grid,FirstClueR,FirstClueC),
+    read_data(File,N,Board,Grid),
     foreach (R in 1..N, C in 1..N, nonvar(Board[R,C]))
-        neibs(N,R,C,Neibs),
-        constrain_cell_with_clues(Board[R,C],Grid,Neibs.to_array())
+        neibs(N,R,C,NeibArr),
+        constrain_blocks(Board[R,C],Grid,NeibArr)
     end,
     % 2x2 black areas must be avoided:
     foreach (R in 1..N-1, C in 1..N-1)
         Grid[R,C] + Grid[R,C+1] + Grid[R+1,C] + Grid[R+1,C+1] #< 4
     end,
     % All black cells must be orthogonally connected:
-    connected_grid(N,Grid,FirstClueR,FirstClueC),
+    scc_grid(Grid),    % all 1 cells are connected, a new global constraint in Picat version 3.1
     solve(Grid),
     foreach (R in 1..N)
         foreach (C in 1..N)
@@ -30,7 +30,7 @@ main([File]) =>
         nl
     end.
 
-read_data(File,N,Board,Grid,FirstClueR,FirstClueC) =>
+read_data(File,N,Board,Grid) =>
     IS = open(File),
     Line1 = read_line(IS),
     [N,NClues] = [to_int(Token) : Token in split(Line1)],
@@ -39,26 +39,23 @@ read_data(File,N,Board,Grid,FirstClueR,FirstClueC) =>
     foreach (_I in 1..NClues)
         Line = read_line(IS),
         [R,C,_|Clues] = [to_int(Token) : Token in split(Line)],
-        (Clues != [0], var(FirstClueR) -> FirstClueR = R, FirstClueC = C; true),
         Board[R,C] = Clues,
         Grid[R,C] = 0
     end,
     Grid :: 0..1,          % the cell (R,C) is blackened iff Grid[R,C] = 1
     close(IS).
 
-neibs(N,R,C,Neibs) =>
-    Neibs = [(R1,C1) :  (R1,C1) in [(R-1,C-1), (R-1,C), (R-1,C+1), (R,C+1),
+neibs(N,R,C,NeibArr) =>
+    NeibArr = {(R1,C1) :  (R1,C1) in [(R-1,C-1), (R-1,C), (R-1,C+1), (R,C+1),
                                     (R+1,C+1), (R+1,C), (R+1,C-1), (R,C-1)],
                                      R1 >= 1, R1 =< N,
-                                     C1 >= 1, C1 =< N].
+                                     C1 >= 1, C1 =< N}.
 
 % use NeibArr as a circular array
-constrain_cell_with_clues([0],Grid,NeibArr) =>  % all are white
+constrain_blocks([0],Grid,NeibArr) =>  % all are white
     sum([Grid[R,C] : (R,C) in NeibArr]) #= 0.
-constrain_cell_with_clues(Clues,Grid,NeibArr) =>
-    Size = len(NeibArr),
-    OccArr = new_array(Size),
-    Layouts = findall(Layout, layout(Clues,Size,NeibArr,OccArr,Layout)),
+constrain_blocks(Clues,Grid,NeibArr) =>
+    findall_layouts(Clues,NeibArr,Layouts),
     Bs = [],
     foreach (Layout in Layouts)
         B :: 0..1,
@@ -67,6 +64,11 @@ constrain_cell_with_clues(Clues,Grid,NeibArr) =>
         Bs := [B|Bs]
     end,
     sum(Bs) #>= 1.
+
+findall_layouts(Clues,NeibArr,Layouts) =>
+    Size = len(NeibArr),
+    OccArr = new_array(Size),
+    Layouts = findall(Layout, layout(Clues,Size,NeibArr,OccArr,Layout)).
 
 % nondeterministically returns a layout for a block of Clue number of neighboring cells
 layout([],Size,_NeibArr,OccArr,Layout) =>
@@ -119,22 +121,3 @@ neib_coords(NeibArr,I0,I1) =>
          abs(R0-R1) == 1
     ).
 
-% all the 1-cells are connected
-connected_grid(N,Grid,FirstClueR,FirstClueC) =>
-    neibs(N,FirstClueR,FirstClueC,FirstClueNeibs),
-    FirstClueNeibIs = [(R-1)*N+C : (R,C) in FirstClueNeibs],
-    FirstI :: FirstClueNeibIs,
-    foreach ((R,C) in FirstClueNeibs)
-        I = (R-1)*N+C,
-        FirstI #= I #=> Grid[R,C]
-    end,        
-    Max = N*N,
-    DistA = new_array(Max),
-    DistA :: 0..Max,
-    element(FirstI,DistA,0),
-    foreach (R in 1..N, C in 1..N)
-        Neibs = [(R1,C1) : (R1,C1) in [(R-1,C),(R+1,C),(R,C-1),(R,C+1)], R1 >= 1, R1 =< N, C1 >= 1, C1 =< N],
-        I = (R-1)*N+C,
-        #~Grid[R,C] #<=> DistA[I] #= Max,
-        (I #!= FirstI #/\ Grid[R,C]) #=> DistA[I] #= 1+min([DistA[I1] : (R1,C1) in Neibs, I1 = (R1-1)*N+C1])
-    end.

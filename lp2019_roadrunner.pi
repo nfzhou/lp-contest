@@ -1,3 +1,4 @@
+% https://github.com/lpcp-contest/lpcp-contest-2019
 % roadrunner.pi
 import sat.
 
@@ -21,55 +22,58 @@ main([File]) =>
     roadrunner(Fs).
 
 roadrunner(Fs) =>
-    MaxY = max([X : $xcoord(X) in Fs]),
-    MaxX = max([Y : $xcoord(Y) in Fs]),
+    proc_facts(Fs,MaxX,MaxY,Hill),
     Laser = new_array(MaxX,MaxY),
-    Hill = new_array(MaxX,MaxY),
-    foreach ($hill(X,Y) in Fs)
-        Hill[X,Y] = 1,
-        Laser[X,Y] = 0
-    end,
     Laser :: 0..1,
-    foreach ($number(X,Y,K) in Fs)
-        sum([Laser[X1,Y1] : (Dx,Dy) in [(-1,0),(1,0),(0,-1),(0,1)],
-		                    X1 = X+Dx, Y1 = Y+Dy, X1 >= 1, X1 =< MaxX, Y1 >= 1, Y1 =< MaxY]) #= K
-    end,
     Road = new_array(MaxX,MaxY),
     Road :: 0..1,
+    foreach ($number(X,Y,Num) in Fs)
+        sum([Laser[X1,Y1] : (X1,Y1) in [(X-1,Y),(X+1,Y),(X,Y-1),(X,Y+1)],
+                            X1 >= 1, X1 =< MaxX,
+                            Y1 >= 1, Y1 =< MaxY]) #= Num
+    end,                        
     foreach (X in 1..MaxX, Y in 1..MaxY)
         (Hill[X,Y] == 1 ->
+            Laser[X,Y] = 0,
             Road[X,Y] = 0
         ; 
-            attacked_positions(Hill,X,Y,MaxX,MaxY,AttackedPs),
-            sum([Laser[X1,Y1] : (X1,Y1) in [(X,Y)|AttackedPs]]) #= 0 #=> Road[X,Y],
-            Laser[X,Y] #=> #~Road[X,Y],
-            foreach ((X1,Y1) in AttackedPs)
-                Laser[X,Y] #=> #~Road[X1,Y1],
-                Laser[X,Y] #=> #~Laser[X1,Y1]
-            end
+            attacked_positions(Hill,X,Y,MaxX,MaxY,Ps),
+            foreach ((X1,Y1) in Ps)
+                Laser[X,Y] #=> #~Laser[X1,Y1],
+                Laser[X,Y] #=> #~Road[X1,Y1]
+            end,
+            sum([Laser[X1,Y1] : (X1,Y1) in [(X,Y)|Ps]]) #= 0 #=> Road[X,Y]
         )
     end,
-    NOneCells #= sum([Road[X,Y] : X in 1..MaxX, Y in 1..MaxY]),
-    subcircuit_grid(Road,NOneCells),   % a new built-in in version 2.7b16 
-    solve([$max(NOneCells)],(Laser,Road)),
-    printf("safecircuitlen(%d).\n",NOneCells).
-    
-attacked_positions(Hill,X,Y,MaxX,MaxY,AttackedPs) =>
-    attacked_positions(Hill,X-1,Y,-1,0,MaxX,MaxY,AttackedPs,AttackedPs1),
-    attacked_positions(Hill,X+1,Y,1,0,MaxX,MaxY,AttackedPs1,AttackedPs2),
-    attacked_positions(Hill,X,Y-1,0,-1,MaxX,MaxY,AttackedPs2,AttackedPs3),
-    attacked_positions(Hill,X,Y+1,0,1,MaxX,MaxY,AttackedPs3,[]).
+	K :: 1..MaxX*MaxY,
+    hcp_grid(Road,_Es,K), 
+    solve([$max(K)],Road),
+    printf("safecircuitlen(%d).\n",K).
 
-attacked_positions(Hill,X,Y,Dx,Dy,MaxX,MaxY,AttackedPs,AttackedPsR),
+proc_facts(Fs,MaxX,MaxY,Hill) =>
+    MaxY = max([X : $xcoord(X) in Fs]),
+    MaxX = max([Y : $xcoord(Y) in Fs]),
+    Hill = new_array(MaxX,MaxY),
+    foreach ($hill(X,Y) in Fs)
+        Hill[X,Y] = 1
+    end.
+    
+attacked_positions(Hill,X,Y,MaxX,MaxY,Ps) =>
+    attacked_positions(Hill,X-1,Y,-1,0,MaxX,MaxY,Ps,Ps1),
+    attacked_positions(Hill,X+1,Y,1,0,MaxX,MaxY,Ps1,Ps2),
+    attacked_positions(Hill,X,Y-1,0,-1,MaxX,MaxY,Ps2,Ps3),
+    attacked_positions(Hill,X,Y+1,0,1,MaxX,MaxY,Ps3,[]).
+
+attacked_positions(Hill,X,Y,Dx,Dy,MaxX,MaxY,Ps,PsR),
     X >= 1, X =< MaxX,
     Y >= 1, Y =< MaxY
 =>
-    (Hill[X,Y]==1 ->
-        AttackedPs = AttackedPsR
+    (Hill[X,Y] == 1 ->
+        Ps = PsR
     ;
-        AttackedPs = [(X,Y)|AttackedPs1],
-        attacked_positions(Hill,X+Dx,Y+Dy,Dx,Dy,MaxX,MaxY,AttackedPs1,AttackedPsR)
+        Ps = [(X,Y)|Ps1],
+        attacked_positions(Hill,X+Dx,Y+Dy,Dx,Dy,MaxX,MaxY,Ps1,PsR)
     ).
-attacked_positions(_Hill,_X,_Y,_Dx,_Dy,_MaxX,_MaxY,AttackedPs,AttackedPsR) =>
-    AttackedPs = AttackedPsR.
+attacked_positions(_Hill,_X,_Y,_Dx,_Dy,_MaxX,_MaxY,Ps,PsR) =>
+    Ps = PsR.
 
