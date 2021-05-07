@@ -52,14 +52,12 @@ neibs(N,R,C,NeibArr) =>
                                      C1 >= 1, C1 =< N}.
 
 % use NeibArr as a circular array
-constrain_blocks([0],Grid,NeibArr) =>  % all are white
-    sum([Grid[R,C] : (R,C) in NeibArr]) #= 0.
 constrain_blocks(Clues,Grid,NeibArr) =>
     findall_layouts(Clues,NeibArr,Layouts),
     Bs = [],
     foreach (Layout in Layouts)
         B :: 0..1,
-        LayoutBs = [cond(I > 0, Grid[R,C], #~Grid[R,C]) : I in Layout, NeibArr[abs(I)] = (R,C)],
+        LayoutBs = [cond(Layout[I] == 1, Grid[R,C], #~Grid[R,C]) : I in 1..len(NeibArr), NeibArr[I] = (R,C)],
         B #= min(LayoutBs),
         Bs := [B|Bs]
     end,
@@ -67,39 +65,27 @@ constrain_blocks(Clues,Grid,NeibArr) =>
 
 findall_layouts(Clues,NeibArr,Layouts) =>
     Size = len(NeibArr),
-    OccArr = new_array(Size),
-    Layouts = findall(Layout, layout(Clues,Size,NeibArr,OccArr,Layout)).
+    Layout = new_array(Size),
+    Layouts = findall(Layout, layout(Clues,Size,NeibArr,Layout)).
 
 % nondeterministically returns a layout for a block of Clue number of neighboring cells
-layout([],Size,_NeibArr,OccArr,Layout) =>
-    Layout = [-I : I in 1..Size, var(OccArr[I])].  % these cells must be white
-layout([Clue|Clues],Size,NeibArr,OccArr,Layout) =>
-    between(1,Size,I0),
-    layout_aux(Clue,Size,NeibArr,OccArr,I0,Layout,Layout1),
+layout([Clue|Clues],Size,NeibArr,Layout), Clue >= 1 =>
+    between(1,Size,I0),   % the block starts at I0
     prev_index(Size,I0,I1),
-    (neib_coords(NeibArr,I0,I1), var(OccArr[I1]) ->
-        Layout1 = [-I1|Layout2],   % leave a gap
-        OccArr[I1] = 1
-    ;
-        Layout1 = Layout2
-    ),   
-    layout(Clues,Size,NeibArr,OccArr,Layout2).
+    (neib_coords(NeibArr,I0,I1) -> Layout[I1] = 0; true),  % leave a gap
+    layout_aux(Clue,Size,NeibArr,I0,Layout),
+    layout(Clues,Size,NeibArr,Layout).
+layout(_,_Size,_NeibArr,_Layout) => true.
 
-layout_aux(Clue,Size,NeibArr,OccArr,I,Layout,LayoutR) =>
-    var(OccArr[I]),
-    OccArr[I] = 1,
-    Layout = [I|Layout1],
+layout_aux(Clue,Size,NeibArr,I,Layout) =>
+    var(Layout[I]),
+    Layout[I] = 1,
     next_index(Size,I,I1),
     (Clue == 1 ->
-        (neib_coords(NeibArr,I,I1), var(OccArr[I1]) ->
-            Layout1 = [-I1|LayoutR],  % leave a gap
-            OccArr[I1] = 1
-        ;
-            Layout1 = LayoutR
-        )
+        (neib_coords(NeibArr,I,I1) -> Layout[I1] = 0; true)  % leave a gap
     ;
         neib_coords(NeibArr,I,I1),
-        layout_aux(Clue-1,Size,NeibArr,OccArr,I1,Layout1,LayoutR)
+        layout_aux(Clue-1,Size,NeibArr,I1,Layout)
     ).
 
 next_index(Size,I,I1) =>
