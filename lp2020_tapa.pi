@@ -69,6 +69,10 @@ findall_layouts(Clues,NeibArr,Layouts) =>
     Layouts = findall(Layout, layout(Clues,Size,NeibArr,Layout)).
 
 % nondeterministically returns a layout for a block of Clue number of neighboring cells
+layout([Clue],Size,_NeibArr,Layout), Clue == Size =>
+    foreach (I in 1..Size)
+        Layout[I] = 1
+    end.
 layout([Clue|Clues],Size,NeibArr,Layout), Clue >= 1 =>
     between(1,Size,I0),   % the block starts at I0
     prev_index(Size,I0,I1),
