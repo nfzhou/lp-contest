@@ -61,14 +61,18 @@ constrain_blocks(Clues,Grid,NeibArr) =>
         B #= min(LayoutBs),
         Bs := [B|Bs]
     end,
-    sum(Bs) #>= 1.
+    sum(Bs) #= 1.
 
 findall_layouts(Clues,NeibArr,Layouts) =>
     Size = len(NeibArr),
     Layout = new_array(Size),
-    Layouts = findall(Layout, layout(Clues,Size,NeibArr,Layout)).
+    Layouts = findall(Layout, layout0(Clues,Size,NeibArr,Layout)).sort_remove_dups().
 
 % nondeterministically returns a layout for a block of Clue number of neighboring cells
+layout0(Clues,Size,NeibArr,Layout) =>
+    layout(Clues,Size,NeibArr,Layout),
+    bind_vars(Layout,0).
+
 layout([Clue],Size,_NeibArr,Layout), Clue == Size =>
     foreach (I in 1..Size)
         Layout[I] = 1

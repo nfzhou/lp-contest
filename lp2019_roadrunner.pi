@@ -59,21 +59,7 @@ proc_facts(Fs,MaxX,MaxY,Hill) =>
     end.
     
 attacked_positions(Hill,X,Y,MaxX,MaxY,Ps) =>
-    attacked_positions(Hill,X-1,Y,-1,0,MaxX,MaxY,Ps,Ps1),
-    attacked_positions(Hill,X+1,Y,1,0,MaxX,MaxY,Ps1,Ps2),
-    attacked_positions(Hill,X,Y-1,0,-1,MaxX,MaxY,Ps2,Ps3),
-    attacked_positions(Hill,X,Y+1,0,1,MaxX,MaxY,Ps3,[]).
-
-attacked_positions(Hill,X,Y,Dx,Dy,MaxX,MaxY,Ps,PsR),
-    X >= 1, X =< MaxX,
-    Y >= 1, Y =< MaxY
-=>
-    (Hill[X,Y] == 1 ->
-        Ps = PsR
-    ;
-        Ps = [(X,Y)|Ps1],
-        attacked_positions(Hill,X+Dx,Y+Dy,Dx,Dy,MaxX,MaxY,Ps1,PsR)
-    ).
-attacked_positions(_Hill,_X,_Y,_Dx,_Dy,_MaxX,_MaxY,Ps,PsR) =>
-    Ps = PsR.
-
+    Ps = [(X1,Y) : X1 in X-1..-1..1, until(Hill[X1,Y] == 1)] ++
+         [(X1,Y) : X1 in X+1..MaxX, until(Hill[X1,Y] == 1)] ++
+         [(X,Y1) : Y1 in Y-1..-1..1, until(Hill[X,Y1] == 1)] ++
+         [(X,Y1) : Y1 in Y+1..MaxY, until(Hill[X,Y1] == 1)].
