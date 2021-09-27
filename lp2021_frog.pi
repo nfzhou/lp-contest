@@ -1,0 +1,82 @@
+/* LPCP Contest 2021 Problem 1: Jumping frog
+by Peter Bernschneider, 24 Sep 2021
+Improved by Neng-Fa Zhou and Alfredo Beaumont
+https://github.com/alviano/lpcp-contest-2021/tree/main/problem-1 */
+
+import util.
+
+find_col(M, N, Cols, I, J, Prev1, Prev2), J > N => false.
+find_col(M, N, Cols, I, J, Prev1, Prev2), J == Prev1 =>
+    find_col(M, N, Cols, I, J + 1, Prev1, Prev2).
+find_col(M, N, Cols, I, J, Prev1, Prev2), J == Prev2 =>
+    find_col(M, N, Cols, I, J + 1, Prev1, Prev2).
+find_col(M, N, Cols, I, J, Prev1, Prev2), M[I, J] == 0, M[I mod N + 1, J] == 0 =>
+    Cols[I] = J.
+find_col(M, N, Cols, I, J, Prev1, Prev2) =>
+    find_col(M, N, Cols, I, J + 1, Prev1, Prev2).
+
+finished(M, N), sum([M[I, J] : I in 1..N, J in 1..N]) == N*N => true.
+finished(M, N) => false.
+
+jump(M, N, Cols, R, C, Actions), finished(M, N) =>
+    println(len(Actions)-1),
+    foreach (X in reverse(tail(Actions)))
+        printf("%d %d\n", X[1], X[2]),
+    end.
+
+jump(M, N, Cols, R, C, Actions) =>
+    M[R, C] := 1,
+    Actions := [[R, C]|Actions],
+    X = [J : J in 1..N, M[R, J] == 0, Cols[R] != J],
+    foreach (J in X)
+        M[R, J] := 1,
+        Actions := [[R, J]|Actions],
+    end,
+    C := Cols[R],
+    M[R, C] := 1,
+    Actions := [[R, C]|Actions],
+    jump(M, N, Cols, R mod N + 1, C, Actions).
+
+solve_fast(M, N, R, C) =>
+    Cols = new_array(N),
+    foreach (I in 1..N)
+        find_col(M, N, Cols, I, 1, cond(I > 1, Cols[I-1], 0), cond(I < N, 0, Cols[1])),
+    end,
+    M[R, C] := 1,
+    Actions = [],
+    if Cols[R] != C then
+        C := Cols[R],
+        M[R, C] := 1,
+        Actions := [[R, C]|Actions],
+    end,
+    jump(M, N, Cols, R mod N + 1, C, Actions).
+
+solve(Land, N, R0, C0) ?=>
+     solve_fast(copy_term(Land), N, R0, C0).
+solve(Land, N, R0, C0) =>
+     MaxT = len([Land[R,C] : R in 1..N, C in 1..N, Land[R,C] == 0]),
+     path(R0,C0,Land,N,MaxT,Plan),
+     println(len(Plan)),
+     foreach([R, C] in Plan)
+         printf("%d %d\n", R, C)
+     end. 
+
+main =>
+    Inp = read_file_lines(), 
+    {N,R0,C0} = Inp[1].convert(), % N = size of grid, (R0,C0) = frog starts here
+    Land = {convert(Inp[1+Row]) : Row in 1..N},
+    Land[R0,C0] := 1,
+    solve(Land, N, R0, C0).
+
+path(R0,C0,Land,N,K,Plan), K == 0 => Plan = [].
+path(R0,C0,Land,N,K,Plan) =>
+    between(1, N, R),
+    between(1, N, C),
+    (R == R0 -> true; C == C0),
+    Land[R,C] == 0,
+    Land[R,C] := 1,    
+    Action = [R,C],
+    Plan = [Action|PlanR],
+    path(R,C,Land,N,K-1,PlanR).
+
+convert(Line) = {to_int(Str) : Str in Line.split(" ")}. % convert an input line to an array of integers

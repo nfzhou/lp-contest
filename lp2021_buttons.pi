@@ -1,0 +1,179 @@
+/* LPCP Contest 2021 Problem 2: Buttons and Scissors 
+by Alfredo Beaumont, Peter Bernschneider, and Neng-Fa Zhou
+24 Sep 2021
+https://github.com/alviano/lpcp-contest-2021/tree/main/problem-2 */
+
+import planner, util.
+
+main() =>
+    [N, C, S] = read_input(),
+    plan(S,100, Plan, Cost),
+    println(len(Plan)),
+    foreach([[I1, J1], [I2, J2]] in Plan)
+        printf("%d %d %d %d\n", I1, J1, I2, J2)
+    end.
+
+read_input() = [N, C, S] => 
+    [N, C] = [X.to_int() : X in readln().split()],
+    S = new_array(N),
+    foreach (I in 1..N)
+        S[I] = {X.to_int() : X in readln().split()}
+    end.
+
+table(+)
+final(S) =>
+    N = len(S),
+    foreach (I in 1..N, J in 1..N)
+        S[I,J] == 0
+    end.
+
+allpairs(X, N, I, J), I > N => true.
+allpairs(X, N, I, J), J > N => false.
+allpairs(X, N, I, J), I == J => allpairs(X, N, I, J + 1).
+allpairs(X, N, I, J), X[I, 1] == X[J, 1] => allpairs(X, N, I + 1, 1).
+allpairs(X, N, I, J), X[I, 2] == X[J, 2] => allpairs(X, N, I + 1, 1).
+allpairs(X, N, I, J), X[I, 1] + X[I, 2] == X[J, 1] + X[J, 2] => allpairs(X, N, I + 1, 1).
+allpairs(X, N, I, J), X[I, 1] - X[I, 2] == X[J, 1] - X[J, 2] => allpairs(X, N, I + 1, 1).
+allpairs(X, N, I, J) => allpairs(X, N, I, J + 1).
+
+all1([]) => true.
+all1([[]|Xs]) => all1(Xs).
+all1([[X]|_]) => false.
+all1([_|Xs]) => all1(Xs).
+
+all2([]) => true.
+all2([[[I1,J1],[I2,J2]]|Xs]), I1 == I2 => all2(Xs).
+all2([[[I1,J1],[I2,J2]]|Xs]), J1 == J2 => all2(Xs).
+all2([[[I1,J1],[I2,J2]]|Xs]), I1+J1 == I2+J2 => all2(Xs).
+all2([[[I1,J1],[I2,J2]]|Xs]), I1-J1 == I2-J2 => all2(Xs).
+all2([[[I1,J1],[I2,J2]]|Xs]) => false.
+all2([[[I1,J1],[I2,J2],[I3,J3]]|Xs]), I1 == I2, I2 == I3 => all2(Xs).
+all2([[[I1,J1],[I2,J2],[I3,J3]]|Xs]), J1 == J2, J2 == J3 => all2(Xs).
+all2([[[I1,J1],[I2,J2],[I3,J3]]|Xs]), I1+J1 == I2+J2, I2+J2 == I3+J3 => all2(Xs).
+all2([[[I1,J1],[I2,J2],[I3,J3]]|Xs]), I1-J1 == I2-J2, I2-J2 == I3-J3 => all2(Xs).
+all2([[[I1,J1],[I2,J2],[I3,J3]]|Xs]) => false.
+all2([[]|Xs]) => all2(Xs).
+all2([X|Xs]) =>
+    allpairs(X, len(X), 1, 1),
+    all2(Xs).
+
+cost(S, Cost, N) =>
+    Colors = new_list(6),
+    foreach(I in 1..6)
+        Colors[I] = [],
+    end,
+    foreach(I in 1..N)
+        foreach(J in 1..N)
+            if S[I, J] > 0 then
+                Colors[S[I, J]] := [[I, J] | Colors[S[I, J]]],
+            end,
+        end,
+    end,
+    Cost = cond((all1(Colors), all2(Colors)), 1, 100000).
+             
+
+table(+)
+heuristic(S) = Cost => cost(S, Cost, len(S)).
+
+table
+action(S, NextS, Action, Cost) =>
+    Cost = 1,
+    choose_cut(S, NextS, Action, len(S), 1, 1).
+
+choose_cut(S, NextS, Action, N, I, J), I > N => false.
+choose_cut(S, NextS, Action, N, I, J), J > N =>
+    choose_cut(S, NextS, Action, N, I + 1, 1).
+choose_cut(S, NextS, Action, N, I, J) ?=>
+    Button = S[I,J],
+    Button !== 0,
+    (    cut_upright(S, NextS, Action, N, I, J, Button, 1)
+    ;
+         cut_right(S, NextS, Action, N, I, J, Button, 1)
+    ;
+         cut_downright(S, NextS, Action, N, I, J, Button, 1)
+    ;
+         cut_down(S, NextS, Action, N, I, J, Button, 1)
+    ).
+choose_cut(S, NextS, Action, N, I, J) =>    
+    choose_cut(S, NextS, Action, N, I, J + 1).
+
+cut_upright(S, NextS, Action, N, I, J, Button, K), I-K < 1 => false.
+cut_upright(S, NextS, Action, N, I, J, Button, K), J+K > N => false.
+cut_upright(S, NextS, Action, N, I, J, Button, K), S[I-K, J+K] !== 0, S[I-K, J+K] !== Button => false.
+cut_upright(S, NextS, Action, N, I, J, Button, K) ?=>
+    S[I-K, J+K] == Button,
+    stop_cut_upright(S, N, I-K-1, J+K+1, Button),
+    Action = [[I, J], [I-K, J+K]],
+    NextS = copy_term(S),
+    foreach (L in 0..K)
+        NextS[I-L, J+L] := 0
+    end.
+cut_upright(S, NextS, Action, N, I, J, Button, K) =>    
+    cut_upright(S, NextS, Action, N, I, J, Button, K + 1).
+
+stop_cut_upright(S, N, I, J, Button), I < 1 => true.
+stop_cut_upright(S, N, I, J, Button), J > N => true.
+stop_cut_upright(S, N, I, J, Button), S[I, J] == Button => false.
+stop_cut_upright(S, N, I, J, Button), S[I, J] > 0 => true.
+stop_cut_upright(S, N, I, J, Button) =>
+    stop_cut_upright(S, N, I-1, J+1, Button).
+
+cut_right(S, NextS, Action, N, I, J, Button, K), J+K > N => false.
+cut_right(S, NextS, Action, N, I, J, Button, K), S[I, J+K] !== 0, S[I, J+K] !== Button => false.
+cut_right(S, NextS, Action, N, I, J, Button, K) ?=>
+    S[I, J+K] == Button,
+    stop_cut_right(S, N, I, J+K+1, Button),
+    Action = [[I, J], [I, J+K]],
+    NextS = copy_term(S),
+    foreach (L in 0..K)
+        NextS[I, J+L] := 0
+    end.
+cut_right(S, NextS, Action, N, I, J, Button, K) =>
+    cut_right(S, NextS, Action, N, I, J, Button, K + 1).
+
+stop_cut_right(S, N, I, J, Button), J > N => true.
+stop_cut_right(S, N, I, J, Button), S[I, J] == Button => false.
+stop_cut_right(S, N, I, J, Button), S[I, J] > 0 => true.
+stop_cut_right(S, N, I, J, Button) =>
+    stop_cut_right(S, N, I, J+1, Button).
+
+cut_downright(S, NextS, Action, N, I, J, Button, K), I+K > N => false.
+cut_downright(S, NextS, Action, N, I, J, Button, K), J+K > N => false.
+cut_downright(S, NextS, Action, N, I, J, Button, K), S[I+K, J+K] !== 0, S[I+K, J+K] !== Button => false.
+cut_downright(S, NextS, Action, N, I, J, Button, K) ?=>
+    S[I+K, J+K] == Button,
+    stop_cut_downright(S, N, I+K+1, J+K+1, Button),
+    Action = [[I, J], [I+K, J+K]],
+    NextS = copy_term(S),
+    foreach (L in 0..K)
+        NextS[I+L, J+L] := 0
+    end.
+cut_downright(S, NextS, Action, N, I, J, Button, K) =>
+    cut_downright(S, NextS, Action, N, I, J, Button, K + 1).
+
+stop_cut_downright(S, N, I, J, Button), I > N => true.
+stop_cut_downright(S, N, I, J, Button), J > N => true.
+stop_cut_downright(S, N, I, J, Button), S[I, J] == Button => false.
+stop_cut_downright(S, N, I, J, Button), S[I, J] > 0 => true.
+stop_cut_downright(S, N, I, J, Button) =>
+    stop_cut_downright(S, N, I+1, J+1, Button).
+
+cut_down(S, NextS, Action, N, I, J, Button, K), I+K > N => false.
+cut_down(S, NextS, Action, N, I, J, Button, K), S[I+K, J] !== 0, S[I+K, J] !== Button => false.
+cut_down(S, NextS, Action, N, I, J, Button, K) ?=>
+    S[I+K, J] == Button,
+    stop_cut_down(S, N, I+K+1, J, Button),
+    Action = [[I, J], [I+K, J]],
+    NextS = copy_term(S),
+    foreach (L in 0..K)
+        NextS[I+L, J] := 0
+    end.
+cut_down(S, NextS, Action, N, I, J, Button, K) =>    
+    cut_down(S, NextS, Action, N, I, J, Button, K + 1).
+
+stop_cut_down(S, N, I, J, Button), I > N => true.
+stop_cut_down(S, N, I, J, Button), S[I, J] == Button => false.
+stop_cut_down(S, N, I, J, Button), S[I, J] > 0 => true.
+stop_cut_down(S, N, I, J, Button) =>
+    stop_cut_down(S, N, I+1, J, Button).
+    

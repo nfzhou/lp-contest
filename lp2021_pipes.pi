@@ -1,0 +1,68 @@
+/* LPCP Contest 2021 Problem 3: Pipes - using constraint scc from Picat 3.1
+by Peter Bernschneider, 24 Sep 2021
+https://github.com/alviano/lpcp-contest-2021/tree/main/problem-3 */
+
+import util, sat.
+
+convert(Line) = [to_int(Str) : Str in Line.split(" ")]. % convert an input line to a list of integers
+
+main =>
+    Inp = read_file_lines(), 
+    [N] = Inp[1].convert(), % println([N), % N = size of grid
+    TypOri = [convert(Inp[1+Row]) : Row in 1..N], % println(Obs),
+    Typ    = [[TypOri[R,C] div 10 : C in 1..N ] : R in 1..N], % 1 = long pipe, 2 = corner, 3 = closed, 5 = T pipe
+    Rot    = [[TypOri[R,C] mod 10 : C in 1..N ] : R in 1..N], % no of rotations
+    Vs = [{(R,C), 1} : R in 1..N, C in 1..N], % all cells are connected!
+    % Es = [{(R,C), (R1,C1), _} : R in 1..N, C in 1..N, (R1,C1) in [(R-1,C), (R,C-1), (R,C+1), (R+1,C)], 0<R1, R1=<N, 0<C1, C1=<N],
+    Es = [{(R,C), (R1,C1), _} : R in 1..N, C in 1..N, (R1,C1) in [(R,C+1), (R+1,C)], 0<R1, R1=<N, 0<C1, C1=<N],    
+    EMap = new_map(), foreach({(R,C), (R1,C1), B} in Es) EMap.put({R,C,R1,C1}, B), EMap.put({R1,C1,R,C}, B) end, % , EMap.put({R1,C1,R,C}, B)
+    Nbcnt = [2,2,1,0,3], % Nbcnt[Typ[R,C]] = number of neighbors connected to R|C 
+    foreach(R in 1..N, C in 1..N)
+        Nbcnt[Typ[R,C]] #= sum([EMap.get({R,C,R1,C1}) : (R1,C1) in [(R-1,C), (R,C-1), (R,C+1), (R+1,C)], 0<R1, R1=<N, 0<C1, C1=<N]),
+        if Typ[R,C] = 1 then 2 #= sum([EMap.get({R,C,R1,C}) : R1 in [R-1, R+1], 0<R1, R1=<N])
+                         #\/ 2 #= sum([EMap.get({R,C,R,C1}) : C1 in [C-1, C+1], 0<C1, C1=<N]) end, % stright line
+        if Typ[R,C] = 2 then 1 #= sum([EMap.get({R,C,R1,C}) : R1 in [R-1, R+1], 0<R1, R1=<N]),
+                             1 #= sum([EMap.get({R,C,R,C1}) : C1 in [C-1, C+1], 0<C1, C1=<N]) end    % turn
+    end,
+    scc(Vs, Es), % all 1 cells are connected, a new global constraint in Picat version 3.1
+    solve(values(EMap)), 
+    Output = [],
+    foreach(R in 1..N, C in 1..N)
+        if     Typ[R,C] = 1 then % long pipe
+            Res = cond(2 = sum([EMap.get({R,C,R1,C}) : R1 in [R-1, R+1], 0<R1, R1=<N]), 1, 0),
+            Nrot = (Res - Rot[R,C]) mod 2,
+            if Nrot = 1 then Output := Output ++ [[R, C]] end
+        elseif Typ[R,C] = 2 then % corner pipe
+            Right = cond( C = N, 0, EMap.get({R,C,R,C+1})),
+            Down  = cond( R = N, 0, EMap.get({R,C,R+1,C})),
+            if     Right = 0, Down = 1 then Res = 0
+            elseif Right = 0, Down = 0 then Res = 1
+            elseif Right = 1, Down = 0 then Res = 2
+            elseif Right = 1, Down = 1 then Res = 3
+            end,            
+            Nrot = (Res - Rot[R,C]) mod 4,
+            foreach(_ in 1..Nrot) Output := Output ++ [[R, C]] end
+        elseif Typ[R,C] = 3 then % closed
+            if     (C < N, EMap.get({R,C,R,C+1}) = 1) then Res = 0 
+            elseif (R < N, EMap.get({R,C,R+1,C}) = 1) then Res = 1 
+            elseif (C > 1, EMap.get({R,C-1,R,C}) = 1) then Res = 2 
+            elseif (R > 1, EMap.get({R,C,R-1,C}) = 1) then Res = 3
+            else printf("Error at %d|%d%n", R, C)
+            end, 
+            Nrot = (Res - Rot[R,C]) mod 4,
+            foreach(_ in 1..Nrot) Output := Output ++ [[R, C]] end
+        elseif Typ[R,C] = 5 then % T pipe
+            if     (R = 1; EMap.get({R,C,R-1,C}) = 0) then Res = 0
+            elseif (C = N; EMap.get({R,C,R,C+1}) = 0) then Res = 1 
+            elseif (R = N; EMap.get({R,C,R+1,C}) = 0) then Res = 2 
+            elseif (C = 1; EMap.get({R,C-1,R,C}) = 0) then Res = 3
+            else printf("Error at %d|%d Typ %d%n", R, C, TypOri[R,C])
+            end, 
+            Nrot = (Res - Rot[R,C]) mod 4,
+            foreach(_ in 1..Nrot) Output := Output ++ [[R, C]] end
+        end
+    end,
+    println(len(Output)),
+    foreach([R, C] in Output)
+        printf("%d %d%n", R, C)
+    end.

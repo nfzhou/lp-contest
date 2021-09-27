@@ -1,0 +1,59 @@
+/* LPCP Contest 2021 Problem 4: Ball Sort Puzzle 
+by Alfredo Beaumont, 24 Sep 2021
+https://github.com/alviano/lpcp-contest-2021/tree/main/problem-4 */
+
+import planner, util.
+
+read_input() = [F, E, Bottles] => 
+    [F, E] = [X.to_int() : X in readln().split()],
+    Bottles = new_list(F+E),
+    foreach (I in 1..F)
+        Bottles[I] = reverse([X.to_int() : X in readln().split()]),
+    end,
+    foreach (I in F+1..F+E)
+        Bottles[I] = [],
+    end.
+
+next_state(S, NextS, X, Xs1, Ys, N, I, J), I < J =>
+    NextS = [S[K] : K in 1..I-1] ++ [Xs1] ++ [S[K] : K in I+1..J-1] ++ [[X|Ys]] ++ [S[K] : K in J+1..N].
+next_state(S, NextS, X, Xs1, Ys, N, I, J) =>
+    NextS = [S[K] : K in 1..J-1] ++ [[X|Ys]] ++ [S[K] : K in J+1..I-1] ++ [Xs1] ++ [S[K] : K in I+1..N].
+
+final([]) => true.
+final([[]|Xs]) => final(Xs).
+final([[X,X,X,X]|Xs]) => final(Xs).
+final(Xs) => false.
+
+action(S, NextS, Action, Cost, N, I, J), I > N => false.
+action(S, NextS, Action, Cost, N, I, J), I == J =>
+    J1 = J + 1,
+    action(S, NextS, Action, Cost, N, I, J1).
+action(S, NextS, Action, Cost, N, I, J), J > N =>
+    I1 = I + 1,
+    J1 = 1,
+    action(S, NextS, Action, Cost, N, I1, J1).
+action(S, NextS, Action, Cost, N, I, J) =>
+    Xs = S[I],
+    Ys = S[J],
+    Xs != [],
+    len(Ys) < 4,
+    [X|Xs1] = Xs,
+    once(Ys == []; head(Ys) == X),
+    next_state(S, NextS, X, Xs1, Ys, N, I, J),
+    Action = [I, J],
+    Cost = 1;
+    action(S, NextS, Action, Cost, N, I, J + 1).
+
+action(S, NextS, Action, Cost) =>
+    N = len(S),
+    I = 1,
+    J = 1,
+    action(S, NextS, Action, Cost, N, I, J).
+
+main() =>
+    [F, E, Bottles] = read_input(),
+    plan(Bottles,Plan),
+    println(len(Plan)),
+    foreach([I, J] in Plan)
+        printf("%d %d\n", I, J),
+    end.
