@@ -1,0 +1,146 @@
+/*
+LPCP Contest 2021 Problem 3: Pipes - using constraint scc from Picat 3.1
+by Neng-Fa Zhou, Oct. 7 2021
+based on Peter Bernschneider's program
+https://github.com/alviano/lpcp-contest-2021/tree/main/problem-3
+*/
+
+import util, sat.
+
+main =>
+    [NStr|Lines] = read_file_lines(),
+    N = to_int(NStr),
+    TileArr = {{to_int(Token) : Token in split(Line)} : Line in Lines}, % input grid
+    TypeArr = new_array(N,N),    % TypeArr[R,C] is the type of the tile at (R,C)
+    OriArr = new_array(N,N),     % OriArr[R,C] is the given orientation of the tile at (R,C)
+    OriVArr = new_array(N,N),    % OriVArr[R,C] is the final orientation of the tile after rotating
+    %  
+    foreach (R in 1..N, C in 1..N)     % constrain the domains of the orientation variables
+        TypeArr[R,C] = TileArr[R,C] div 10,
+        OriArr[R,C] = TileArr[R,C] mod 10,
+        (TypeArr[R,C] == 1 -> OriVArr[R,C] :: 0..1; OriVArr[R,C] :: 0..3)
+    end,
+    %         
+    Vs = [{(R,C), 1} : R in 1..N, C in 1..N], % all cells are connected!
+    Es = [{(R,C), (R1,C1), _} : R in 1..N, C in 1..N, (R1,C1) in [(R,C+1), (R+1,C)], R1 =< N, C1 =< N],    
+    EMap = new_map(),
+    foreach({(R,C), (R1,C1), B} in Es)
+        EMap.put({R,C,R1,C1}, B),
+        EMap.put({R1,C1,R,C}, B)
+    end,
+    scc(Vs, Es),              % all cells are connected, a new global constraint in Picat version 3.1
+    %
+    foreach (R in 1..N, C in 1..N)
+        constrain_boundary(N,R,C,TypeArr[R,C], OriVArr[R,C]),
+        if C < N then constrain_left_right(EMap.get({R,C,R,C+1}), TypeArr[R,C], OriVArr[R,C], TypeArr[R,C+1], OriVArr[R,C+1]) end,
+        if R < N then constrain_up_down(EMap.get({R,C,R+1,C}), TypeArr[R,C], OriVArr[R,C], TypeArr[R+1,C], OriVArr[R+1,C]) end
+    end,        
+    solve([values(EMap),OriVArr]),
+    Ops = [],
+    foreach(R in 1..N, C in 1..N)
+        while (OriArr[R,C] != OriVArr[R,C])
+            rotate(TypeArr[R,C],OriArr[R,C],NewOri),
+            OriArr[R,C] := NewOri,
+            Ops := [(R,C)|Ops]
+        end
+    end,
+    println(len(Ops)),
+    foreach((R, C) in reverse(Ops))
+        printf("%d %d%n", R, C)
+    end.
+
+constrain_boundary(N,R,C,Type,OriV) =>
+    if R == 1 then
+       open_up(Type,OriV,0)
+    end,
+    if R == N then
+       open_down(Type,OriV,0)
+    end,
+    if C == 1 then
+       open_left(Type,OriV,0)
+    end,
+    if C == N then
+       open_right(Type,OriV,0)
+    end.
+
+open_up(Type,Ori,OpenUp) =>
+    table_in({Type,Ori,OpenUp},
+             [{1,0,0},
+              {1,1,1},
+              {2,0,0},
+              {2,1,1},
+              {2,2,1},
+              {2,3,0},
+              {3,0,0},
+              {3,1,0},
+              {3,2,0},
+              {3,3,1},
+              {5,0,0},
+              {5,1,1},
+              {5,2,1},
+              {5,3,1}]).
+
+open_down(Type,Ori,OpenUp) =>
+    table_in({Type,Ori,OpenUp},
+             [{1,0,0},
+              {1,1,1},
+              {2,0,1},
+              {2,1,0},
+              {2,2,0},
+              {2,3,1},
+              {3,0,0},
+              {3,1,1},
+              {3,2,0},
+              {3,3,0},
+              {5,0,1},
+              {5,1,1},
+              {5,2,0},
+              {5,3,1}]).
+
+open_left(Type,Ori,OpenUp) =>
+    table_in({Type,Ori,OpenUp},
+             [{1,0,1},
+              {1,1,0},
+              {2,0,1},
+              {2,1,1},
+              {2,2,0},
+              {2,3,0},
+              {3,0,0},
+              {3,1,0},
+              {3,2,1},
+              {3,3,0},
+              {5,0,1},
+              {5,1,1},
+              {5,2,1},
+              {5,3,0}]).
+
+open_right(Type,Ori,OpenUp) =>
+    table_in({Type,Ori,OpenUp},
+             [{1,0,1},
+              {1,1,0},
+              {2,0,0},
+              {2,1,0},
+              {2,2,1},
+              {2,3,1},
+              {3,0,1},
+              {3,1,0},
+              {3,2,0},
+              {3,3,0},
+              {5,0,1},
+              {5,1,0},
+              {5,2,1},
+              {5,3,1}]).
+
+constrain_left_right(B,LType,LOri,RType,ROri) =>
+    open_right(LType,LOri,OpenRight),
+    open_left(RType,ROri,OpenLeft),
+    B #<=> OpenRight #/\ OpenLeft.
+    
+constrain_up_down(B,UType,UOri,DType,DOri) =>
+    open_down(UType,UOri,OpenDown),
+    open_up(DType,DOri,OpenUp),
+    B #<=> OpenDown #/\ OpenUp.
+
+rotate(1,0,NewOri) => NewOri = 1.
+rotate(1,1,NewOri) => NewOri = 0.
+rotate(_,Ori,NewOri) => NewOri = (Ori+1) mod 4.
