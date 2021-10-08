@@ -63,8 +63,8 @@ constrain_boundary(N,R,C,Type,OriV) =>
        open_right(Type,OriV,0)
     end.
 
-open_up(Type,Ori,OpenUp) =>
-    table_in({Type,Ori,OpenUp},
+open_up(Type,Ori,Open) =>
+    table_in({Type,Ori,Open},
              [{1,0,0},
               {1,1,1},
               {2,0,0},
@@ -80,8 +80,8 @@ open_up(Type,Ori,OpenUp) =>
               {5,2,1},
               {5,3,1}]).
 
-open_down(Type,Ori,OpenUp) =>
-    table_in({Type,Ori,OpenUp},
+open_down(Type,Ori,Open) =>
+    table_in({Type,Ori,Open},
              [{1,0,0},
               {1,1,1},
               {2,0,1},
@@ -97,8 +97,8 @@ open_down(Type,Ori,OpenUp) =>
               {5,2,0},
               {5,3,1}]).
 
-open_left(Type,Ori,OpenUp) =>
-    table_in({Type,Ori,OpenUp},
+open_left(Type,Ori,Open) =>
+    table_in({Type,Ori,Open},
              [{1,0,1},
               {1,1,0},
               {2,0,1},
@@ -114,8 +114,8 @@ open_left(Type,Ori,OpenUp) =>
               {5,2,1},
               {5,3,0}]).
 
-open_right(Type,Ori,OpenUp) =>
-    table_in({Type,Ori,OpenUp},
+open_right(Type,Ori,Open) =>
+    table_in({Type,Ori,Open},
              [{1,0,1},
               {1,1,0},
               {2,0,0},
