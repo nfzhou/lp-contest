@@ -35,7 +35,7 @@ main =>
         if C < N then constrain_left_right(EMap.get({R,C,R,C+1}), TypeArr[R,C], OriVArr[R,C], TypeArr[R,C+1], OriVArr[R,C+1]) end,
         if R < N then constrain_up_down(EMap.get({R,C,R+1,C}), TypeArr[R,C], OriVArr[R,C], TypeArr[R+1,C], OriVArr[R+1,C]) end
     end,        
-    solve([values(EMap),OriVArr]),
+    solve(OriVArr),
     Ops = [],
     foreach(R in 1..N, C in 1..N)
         while (OriArr[R,C] != OriVArr[R,C])
@@ -132,14 +132,12 @@ open_right(Type,Ori,OpenUp) =>
               {5,3,1}]).
 
 constrain_left_right(B,LType,LOri,RType,ROri) =>
-    open_right(LType,LOri,OpenRight),
-    open_left(RType,ROri,OpenLeft),
-    B #<=> OpenRight #/\ OpenLeft.
+    open_right(LType,LOri,B),
+    open_left(RType,ROri,B).
     
 constrain_up_down(B,UType,UOri,DType,DOri) =>
-    open_down(UType,UOri,OpenDown),
-    open_up(DType,DOri,OpenUp),
-    B #<=> OpenDown #/\ OpenUp.
+    open_down(UType,UOri,B),
+    open_up(DType,DOri,B).
 
 rotate(1,0,NewOri) => NewOri = 1.
 rotate(1,1,NewOri) => NewOri = 0.
