@@ -1,0 +1,112 @@
+/*
+LPCP Contest 2021 Problem 3: Pipes - using constraint scc from Picat 3.1
+by Neng-Fa Zhou, Oct. 8, 2021
+Another version based on Peter Bernschneider's program
+https://github.com/alviano/lpcp-contest-2021/tree/main/problem-3
+*/
+
+import util, sat.
+
+main =>
+    [NStr|Lines] = read_file_lines(),
+    N = to_int(NStr),
+    TileArr = {{to_int(Token) : Token in split(Line)} : Line in Lines}, % input grid
+    InitOriArr = new_array(N,N),       % InitOriArr[R,C] is the initial orientation of the tile at (R,C)
+    OLArr = new_array(N,N),            % OLArr[R,C] is 1 iff the tile at (R,C) is open leftward
+    OUArr = new_array(N,N),            % OUArr[R,C] is 1 iff the tile at (R,C) is open upward
+    ORArr = new_array(N,N),            % ORArr[R,C] is 1 iff the tile at (R,C) is open rightward
+    ODArr = new_array(N,N),            % ODArr[R,C] is 1 iff the tile at (R,C) is open downward        
+    %  
+    foreach (R in 1..N, C in 1..N)     
+        Type = TileArr[R,C] div 10,
+        InitOriArr[R,C] = TileArr[R,C] mod 10,
+        constrain_open_ends(Type, OLArr[R,C], OUArr[R,C], ORArr[R,C], ODArr[R,C]),
+        if R == 1 then
+            OUArr[R,C] = 0             % cannot open upward
+        end,
+        if R == N then
+            ODArr[R,C] = 0             % cannot open downward
+        end,
+        if C == 1 then
+            OLArr[R,C] = 0             % cannot open leftward
+        end,
+        if C == N then
+            ORArr[R,C] = 0             % cannot open rightward
+        end,
+        if R < N then
+            ODArr[R,C] = OUArr[R+1,C]  % up-down consistent
+        end,
+        if C < N then
+            ORArr[R,C] = OLArr[R,C+1]  % left-right consistent
+        end
+    end,
+    OLArr :: 0..1,
+    OUArr :: 0..1,
+    ORArr :: 0..1,
+    ODArr :: 0..1, 
+    %         
+    Vs = [{(R,C), 1} : R in 1..N, C in 1..N], % all cells are connected!
+    Es = [{(R,C), (R1,C1), B} : R in 1..N, C in 1..N,
+                                (R1,C1) in [(R,C+1), (R+1,C)],
+                                R1 =< N, C1 =< N,
+                                B = cond(R==R1, ORArr[R,C], ODArr[R,C])],
+    scc(Vs, Es),                        % all cells are connected
+    %
+    solve((OLArr,OUArr,ORArr,ODArr)),
+    %
+    Ops = [],
+    foreach (R in 1..N, C in 1..N)
+        tile_open_ends(Type, Ori, {OLArr[R,C], OUArr[R,C], ORArr[R,C], ODArr[R,C]}),
+        while (InitOriArr[R,C] != Ori)
+            rotate(Type, InitOriArr[R,C], NewOri),
+            InitOriArr[R,C] := NewOri,
+            Ops := [(R,C)|Ops]
+        end
+    end,
+    println(len(Ops)),
+    foreach((R, C) in reverse(Ops))
+        printf("%d %d%n", R, C)
+    end.
+
+%                   L,U,R,D
+tile_open_ends(1,0,{1,0,1,0}).
+tile_open_ends(1,1,{0,1,0,1}).
+tile_open_ends(2,0,{1,0,0,1}).
+tile_open_ends(2,1,{1,1,0,0}).
+tile_open_ends(2,2,{0,1,1,0}).
+tile_open_ends(2,3,{0,0,1,1}).
+tile_open_ends(3,0,{0,0,1,0}).
+tile_open_ends(3,1,{0,0,0,1}).
+tile_open_ends(3,2,{1,0,0,0}).
+tile_open_ends(3,3,{0,1,0,0}).
+tile_open_ends(5,0,{1,0,1,1}).
+tile_open_ends(5,1,{1,1,0,1}).
+tile_open_ends(5,2,{1,1,1,0}).
+tile_open_ends(5,3,{0,1,1,1}).
+
+constrain_open_ends(1,OL,OU,OR,OD) =>  % straight
+    table_in({OL,OU,OR,OD},
+             [{1,0,1,0},
+              {0,1,0,1}]).
+constrain_open_ends(2,OL,OU,OR,OD) =>  % corner                             
+    table_in({OL,OU,OR,OD},
+             [{1,0,0,1},
+              {1,1,0,0},
+              {0,1,1,0},
+              {0,0,1,1}]).
+constrain_open_ends(3,OL,OU,OR,OD) =>  % closed
+    table_in({OL,OU,OR,OD},
+             [{0,0,1,0},
+              {0,0,0,1},
+              {1,0,0,0},
+              {0,1,0,0}]).
+constrain_open_ends(5,OL,OU,OR,OD) =>  % T-shaped
+    table_in({OL,OU,OR,OD},
+             [{1,0,1,1},
+              {1,1,0,1},
+              {1,1,1,0},
+              {0,1,1,1}]).
+
+rotate(1,0,NewOri) => NewOri = 1.
+rotate(1,1,NewOri) => NewOri = 0.
+rotate(_,Ori,NewOri) => NewOri = (Ori+1) mod 4.
