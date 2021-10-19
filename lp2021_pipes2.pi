@@ -51,7 +51,7 @@ main =>
                                 R1 =< N, C1 =< N,
                                 B = cond(R==R1, ORArr[R,C], ODArr[R,C])],
     solve((OLArr,OUArr,ORArr,ODArr)),
-    scc(Vs, Es),                        % all cells are connected
+    scc(Vs, Es),                        % All cells are connected. It's interesting that it's faster to check scc here than before solve
     %
     Ops = [],
     foreach (R in 1..N, C in 1..N)
