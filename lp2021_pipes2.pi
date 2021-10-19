@@ -50,9 +50,8 @@ main =>
                                 (R1,C1) in [(R,C+1), (R+1,C)],
                                 R1 =< N, C1 =< N,
                                 B = cond(R==R1, ORArr[R,C], ODArr[R,C])],
-    scc(Vs, Es),                        % all cells are connected
-    %
     solve((OLArr,OUArr,ORArr,ODArr)),
+    scc(Vs, Es),                        % all cells are connected
     %
     Ops = [],
     foreach (R in 1..N, C in 1..N)
