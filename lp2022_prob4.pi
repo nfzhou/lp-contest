@@ -1,0 +1,127 @@
+% https://github.com/lpcp-contest/lpcp-contest-2022/tree/main/problem-4
+import util, sat.
+
+main =>
+    [Line1|Lines] = read_file_lines(),
+    [H,W] = [to_int(Token) : Token in split(Line1)],
+    IM = {{to_int(Token) : Token in split(Line)} : Line in Lines},
+    BM = new_array(H,W),
+    foreach (R in 1..H, C in 1..W)
+        BM[R,C] = [BRow, BCol], 
+        if IM[R,C] > 0 then
+            BRow = [(C1,T) : C1 in C+1..W, IM[R,C1] > 0, no_islands_row(IM,R,C,C1), T :: 0..2],
+            BCol = [(R1,T) : R1 in R+1..H, IM[R1,C] > 0, no_islands_col(IM,R,R1,C), T :: 0..2]
+        else
+            BRow = [],
+            BCol = []
+        end
+    end,
+    foreach (R in 1..H, C in 1..W)
+        if IM[R,C] > 0 then
+            constrain_number(H,W,R,C,IM,BM),
+            constrain_cross(H,W,R,C,IM,BM)
+        end
+    end,
+    Vs = [],
+    Es = [],
+    foreach (R in 1..H, C in 1..W)
+        if IM[R,C] > 0 then
+            Vs := [{(R,C),1}|Vs],
+            BM[R,C] = [BRow, BCol],             
+            if BRow = [(C1,Tr)] then
+                Tr #> 0 #<=> Br #= 1,
+                Es := [{(R,C),(R,C1),Br}|Es]
+            end,
+            if BCol = [(R1,Tc)] then
+                Tc #> 0 #<=> Bc #= 1,
+                Es := [{(R,C),(R1,C),Bc}|Es]
+            end
+        end
+    end,
+    scc(Vs,Es),
+    solve(BM),
+    output(H,W,BM).
+        
+no_islands_row(IM,R,C,C1) =>
+    foreach (C2 in C+1..C1-1)
+        IM[R,C2] == 0
+    end.
+
+no_islands_col(IM,R,R1,C) =>
+    foreach (R2 in R+1..R1-1)
+        IM[R2,C] == 0
+    end.
+
+constrain_number(H,W,R,C,IM,BM) =>
+    BM[R,C] = [BRow, BCol],
+    Ts = [],
+    if BRow = [(_,T1)] then
+        Ts := [T1|Ts]
+    end,
+    if BCol = [(_,T2)] then
+        Ts := [T2|Ts]
+    end,
+    foreach (C1 in 1..C-1)
+        BM[R,C1] = [BRow1, _],
+        if BRow1 = [(C,T3)] then
+            Ts := [T3|Ts]
+        end
+    end,
+    foreach (R1 in 1..R-1)
+        BM[R1,C] = [_, BCol1],
+        if BCol1 = [(R,T4)] then
+            Ts := [T4|Ts]
+        end
+    end,
+    sum(Ts) #= IM[R,C].
+
+constrain_cross(H,W,R,C,IM,BM) =>
+    BM[R,C] = [BRow, BCol],
+    if BRow = [(C1,T1)] then
+        foreach (C2 in C+1..C1-1, R2 in 1..R-1)
+            BM[R2,C2] = [_, BCol2],
+            if BCol2 = [(R3,T3)] && R3 > R then
+                T1 #= 0 #\/ T3 #= 0
+            end
+        end
+    end,
+    if BCol = [(R1,T2)] then
+        foreach (R2 in R+1..R1-1, C2 in 1..C-1)
+            BM[R2,C2] = [BRow2, _],
+            if BRow2 = [(C3,T3)] && C3 > C then
+                T2 #= 0 #\/ T3 #= 0
+            end
+        end
+    end.
+
+output(H,W,BM) =>
+    Count = 0,
+    foreach (R in 1..H, C in 1..W)
+        BM[R,C] = [BRow, BCol],
+        if BRow = [(_,T1)] then
+            Count := Count+T1
+        end,
+        if BCol = [(_,T2)] then
+            Count := Count+T2
+        end
+    end,
+    println(Count),
+    foreach (R in 1..H, C in 1..W)
+        BM[R,C] = [BRow, BCol],
+        if BRow = [(C1,T1)] then
+            foreach (_ in 1..T1)
+                printf("%w %w %w %w\n", R-1, C-1, R-1, C1-1)
+            end
+        end,
+        if BCol = [(R1,T2)] then
+            foreach (_ in 1..T2)
+                printf("%w %w %w %w\n", R-1, C-1, R1-1, C-1)
+            end
+        end
+    end.
+    
+    
+    
+        
+    
+    

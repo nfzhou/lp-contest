@@ -1,0 +1,57 @@
+% https://github.com/lpcp-contest/lpcp-contest-2022/tree/main/problem-5
+% requires Picat version 2.3#7 or up
+%	
+import util, sat.
+
+main =>
+    S = to_int(read_line()),
+    IM = new_array(S+1,S+1),
+    foreach (R in 1..S+1)
+        IM[R] = {to_int(Token) : Token in read_line().split()}
+    end,
+    M = new_array(S+2,S+2),
+    foreach (R in 1..S+2, C in 1..S+2)
+        M[R,C] = (Bp,Bs),         % primary and secondary
+        if (R == 1 || R == S+2 || C == 1 || C == S+2) then
+            Bp = 0,
+            Bs = 0
+        else
+            Bp :: 0..1,
+            Bs :: 0..1,
+            Bp + Bs #= 1
+        end
+    end,
+    foreach (R in 2..S+2, C in 2..S+2)
+		M[R-1,C-1] = (Bp1,_),
+		M[R-1,C] = (_,Bs2),
+		M[R,C-1] = (_,Bs3),
+		M[R,C] = (Bp4,_),
+		if IM[R-1,C-1] >= 0 then
+			 IM[R-1,C-1] #= Bp1+Bs2+Bs3+Bp4
+		end
+	end,
+    Vs = [{(R-1,C-1),_} : R in 2..S+2, C in 2..S+2],
+    Es = [],
+    foreach (R in 2..S+1, C in 2..S+1)
+        M[R,C] = (Bp,Bs),
+        Es := [{(R-1,C-1),(R,C),Bp}, {(R-1,C),(R,C-1),Bs}|Es]
+    end,
+    acyclic(Vs,Es),
+    solve(M),
+    output(M).
+
+output(M) =>
+	S = len(M),
+    foreach (R in 2..S-1)
+        foreach (C in 2..S-1)
+            M[R,C] = (B1,B2),
+            if B1 == 1 then
+                print('\\')
+            else
+                print('/')
+            end
+        end,
+        nl
+    end.
+
+        
