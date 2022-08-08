@@ -1,5 +1,5 @@
 % https://github.com/lpcp-contest/lpcp-contest-2022/tree/main/problem-5
-% requires Picat version 2.3#7 or up
+% requires Picat version 3.2#7 or up
 %	
 import util, sat.
 
