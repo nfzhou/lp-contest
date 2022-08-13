@@ -1,0 +1,76 @@
+% https://github.com/lpcp-contest/lpcp-contest-2022/tree/main/problem-1
+% by Peter Bernschneider and Neng-Fa Zhou, August 2022
+% To run, use the command: picat lp2022_prob1 < instance    
+%
+import util, sat.
+
+main =>
+    read_data(NR,NC,IM),
+    PIs = [{R,C,D} : R in 1..NR, C in 1..NC, D = IM[R,C], D > 0],
+    W = new_array(NR,NC),                   % W[R,C] = 1 iff there is a wall at (R,C)
+    preproc(NR,NC,PIs,W),
+    W :: 0..1,
+    confined(NR,NC,PIs,W),
+    Vs = [{(R,C), W[R,C]} : R in 1..NR, C in 1..NC],
+    Es = [{(R,C), (R1,C1), _} : R in 1..NR, C in 1..NC, (R1,C1) in neibs(NR,NC,R,C)],
+    hcp(Vs,Es),    
+    Obj1 #= sum([W[R,C]    : R in 1..NR, C in 1..NC]),
+    solve($[min(Obj1), report(output(NR,NC,W))], W).
+
+read_data(NR,NC,IM) =>
+    [Line1|Lines] = read_file_lines(),
+    [NR,NC] = [to_int(Token) : Token in split(Line1)],
+    IM = {{to_int(Token) : Token in split(Line)} : Line in Lines}.
+
+preproc(NR,NC,PIs,W)=>
+    foreach (R in 1..NR, C in 1..NC)
+        if member({R1,C1,D}, PIs) && abs(R-R1)+abs(C-C1) < D then
+            W[R,C] = 0
+        end
+    end,
+    MinR = NR, MaxR = 1,
+    MinC = NC, MaxC = 1,
+    foreach ({R,C,D} in PIs)
+        MinR := min(MinR, R-D),
+        MaxR := max(MaxR, R+D),
+        MinC := min(MinC, C-D),
+        MaxC := max(MaxC, C+D)
+    end,
+    foreach (R in 1..MinR-1, C in 1..NC)
+        W[R,C] = 0
+    end,
+    foreach (R in MaxR+1..NR, C in 1..NC)
+        W[R,C] = 0
+    end,
+    foreach (R in 1..NR, C in 1..MinC-1)
+        W[R,C] = 0
+    end,
+    foreach (R in 1..NR, C in MaxC+1..NC)
+        W[R,C] = 0
+    end.
+
+confined(NR,NC,PIs,W) =>
+    foreach ({R,C,D} in PIs)                                % all walls are confined
+        if not (member({R,TC,_}, PIs) && TC =< C-D) then
+            sum([W[R,C1] : C1 in 1..C-D]) #= 1
+        end,
+        if not (member({R,TC,_}, PIs) && TC >= C+D) then    
+            sum([W[R,C1] : C1 in C+D..NC]) #= 1
+        end,
+        if not (member({TR,C,_}, PIs) && TR =< R-D) then        
+            sum([W[R1,C] : R1 in 1..R-D]) #= 1
+        end,
+        if not (member({TR,C,_}, PIs) && TR >= R+D) then            
+            sum([W[R1,C] : R1 in R+D..NR]) #= 1
+        end
+    end.
+    
+neibs(NR,NC,R,C) = [(R1,C1) : (Dr,Dc) in [(0,-1),(0,1),(-1,0),(1,0),(-1,-1),(-1,1),(1,-1),(1,1)],
+                               R1 = R+Dr, C1 = C+Dc, R1 >= 1, R1 <= NR, C1 >= 1, C1 <= NC].
+
+output(NR,NC,W) =>
+    Count = sum([1 : R in 1..NR, C in 1..NC, W[R,C] == 1]),
+    println(Count),
+    foreach (R in 1..NR, C in 1..NC, W[R,C] == 1)
+        printf("%w %w\n", R, C)
+    end.

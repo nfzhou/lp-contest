@@ -1,127 +1,152 @@
 % https://github.com/lpcp-contest/lpcp-contest-2022/tree/main/problem-4
-import util, sat.
+% by Alfredo Beaumont, August 3, 2022
+% To run, use the command: picat lp2022_prob4 < instance	
+%
+import planner, util, basic.
+
+final([_, _, _, _, []]) => true.
+final(_) => false.
+
+action([G, Y, X, D, L], S1, Action, Cost), membchk([Y, X], L) ?=>
+  Action = beep,
+  Cost = 1,
+  S1 = [G, Y, X, D, delete(L, [Y, X])].
+action([G, Y, X, 0, L], S1, Action, Cost), Y > 1, G[Y, X] >= 0, G[Y, X] == G[Y-1,X] ?=>
+  Action = forward,
+  Cost = 1,
+  S1 = [G, Y-1, X, 0, L].
+action([G, Y, X, 0, L], S1, Action, Cost), Y > 1, G[Y, X] >= 0, abs(G[Y, X] - G[Y-1,X]) == 1 ?=>
+  Action = jump,
+  Cost = 1,
+  S1 = [G, Y-1, X, 0, L].
+action([G, Y, X, 1, L], S1, Action, Cost), X < G[1].len, G[Y, X] >= 0, G[Y, X] == G[Y,X+1] ?=>
+  Action = forward,
+  Cost = 1,
+  S1 = [G, Y, X+1, 1, L].
+action([G, Y, X, 1, L], S1, Action, Cost), X < G[1].len, G[Y, X] >= 0, abs(G[Y, X] - G[Y,X+1]) == 1 ?=>
+  Action = jump,
+  Cost = 1,
+  S1 = [G, Y, X+1, 1, L].
+action([G, Y, X, 2, L], S1, Action, Cost), Y < G.len, G[Y, X] >= 0, G[Y, X] == G[Y+1,X] ?=>
+  Action = forward,
+  Cost = 1,
+  S1 = [G, Y+1, X, 2, L].
+action([G, Y, X, 2, L], S1, Action, Cost), Y < G.len, G[Y, X] >= 0, abs(G[Y, X] - G[Y+1,X]) == 1 ?=>
+  Action = jump,
+  Cost = 1,
+  S1 = [G, Y+1, X, 2, L].
+action([G, Y, X, 3, L], S1, Action, Cost), X > 1, G[Y, X] >= 0, G[Y, X] == G[Y,X-1] ?=>
+  Action = forward,
+  Cost = 1,
+  S1 = [G, Y, X-1, 3, L].
+action([G, Y, X, 3, L], S1, Action, Cost), X > 1, G[Y, X] >= 0, abs(G[Y, X] - G[Y,X-1]) == 1 ?=>
+  Action = jump,
+  Cost = 1,
+  S1 = [G, Y, X-1, 3, L].
+action([G, Y, X, D, L], S1, Action, Cost) ?=>
+  Action = left,
+  Cost = 1,
+  D1 = D - 1,
+  if D1 < 0 then
+    D1 := D1 + 4
+  end,
+  S1 = [G, Y, X, D1, L].
+action([G, Y, X, D, L], S1, Action, Cost) =>
+  Action = right,
+  Cost = 1,
+  S1 = [G, Y, X, (D + 1) mod 4, L].
+
+delete([], X) = [].
+delete([H|T], X) = cond(X == H, T, [H|delete(T, X)]).
+
+count(Plan, Subplan, I, J, C), J >= Subplan.len =>
+  count(Plan, Subplan, I + Subplan.len, 0, C1),
+  C = 1 + C1.
+count(Plan, Subplan, I, J, C), I+J > Plan.len =>
+  C = 0.
+count(Plan, Subplan, I, J, C), Plan[I+J] == Subplan[J+1] =>
+  count(Plan, Subplan, I, J + 1, C).
+count(Plan, Subplan, I, J, C) =>
+  count(Plan, Subplan, I+1, 0, C).
+
+optimize(Plan, M, S, 1, I, A) => A = false.
+optimize(Plan, M, S, L, I, A), L + I >= Plan.len =>
+  optimize(Plan, M, S, L-1, I, A).
+optimize(Plan, M, S, L, I, A) =>
+  Subplan = {Plan[I+J-1] : J in 1..L},
+  count(Plan, Subplan, I, 0, C),
+  if Plan.len - C * (L - 1) <= M then
+    A = Subplan
+  else
+    optimize(Plan, M, S, L, I+1, A)
+  end.
+optimize(Plan, M, S, A, P1) =>
+  optimize(Plan.to_array(), M, S, S, 1, A1),
+  if A1 == true then
+    A = A1,
+    P1 = Plan,
+  else
+    P = new_array(Plan.len+1),
+    foreach (I in 1..Plan.len )
+      P[I] = Plan[I],
+    end,
+    P[Plan.len+1] = left,
+    optimize(P, M, S, S, 1, A2),
+    if A2 == true then
+      A = A2,
+      P1 = P.to_list(),
+    else
+      P[Plan.len+1] := right,
+      optimize(P, M, S, S, 1, A),
+      P1 = P.to_list(),
+    end,
+  end.
+
+replace(P, Subplan, I, P1), I + Subplan.len > P.len + 1 =>
+  P1 = [P[J] : J in I..P.len].
+replace(P, Subplan, I, P1), {P[I+J-1] : J in 1..Subplan.len} == Subplan =>
+  replace(P, Subplan, I + Subplan.len, P2),
+  P1 = [subroutine | P2].
+replace(P, Subplan, I, P1) =>
+  replace(P, Subplan, I + 1, P2),
+  P1 = [P[I]|P2].
+replace(P, Subplan, P1) => replace(P, Subplan, 1, P1).
+
+dump(P, A, M, S) =>
+  foreach (Action in P)
+    printf("%w ", Action)
+  end,
+  foreach (I in P.len + 1..M)
+    printf("nop ")
+  end,
+  println("."),
+  foreach (Action in A)
+    printf("%w ", Action)
+  end,
+  foreach (I in A.len + 1..S)
+    printf("nop ")
+  end,
+  println(".").
+
+solve(Grid, Ri, Ci, Di, L, M, S) ?=>
+  best_plan([Grid, Ri+1, Ci+1, Di, L], Plan, Cost),
+  if Cost <= M then
+    dump(Plan, [], M, S)
+  else
+    optimize(Plan, M, S, A, P),
+    if A != false then
+      replace(P.to_array(), A, P1),
+      dump(P1, A, M, S)
+    %else
+      % solve(Grid, Ri, Ci, Di, L, M, S)
+    end
+  end.
 
 main =>
-    [Line1|Lines] = read_file_lines(),
-    [H,W] = [to_int(Token) : Token in split(Line1)],
-    IM = {{to_int(Token) : Token in split(Line)} : Line in Lines},
-    BM = new_array(H,W),
-    foreach (R in 1..H, C in 1..W)
-        BM[R,C] = [BRow, BCol], 
-        if IM[R,C] > 0 then
-            BRow = [(C1,T) : C1 in C+1..W, IM[R,C1] > 0, no_islands_row(IM,R,C,C1), T :: 0..2],
-            BCol = [(R1,T) : R1 in R+1..H, IM[R1,C] > 0, no_islands_col(IM,R,R1,C), T :: 0..2]
-        else
-            BRow = [],
-            BCol = []
-        end
-    end,
-    foreach (R in 1..H, C in 1..W)
-        if IM[R,C] > 0 then
-            constrain_number(H,W,R,C,IM,BM),
-            constrain_cross(H,W,R,C,IM,BM)
-        end
-    end,
-    Vs = [],
-    Es = [],
-    foreach (R in 1..H, C in 1..W)
-        if IM[R,C] > 0 then
-            Vs := [{(R,C),1}|Vs],
-            BM[R,C] = [BRow, BCol],             
-            if BRow = [(C1,Tr)] then
-                Tr #> 0 #<=> Br #= 1,
-                Es := [{(R,C),(R,C1),Br}|Es]
-            end,
-            if BCol = [(R1,Tc)] then
-                Tc #> 0 #<=> Bc #= 1,
-                Es := [{(R,C),(R1,C),Bc}|Es]
-            end
-        end
-    end,
-    scc(Vs,Es),
-    solve(BM),
-    output(H,W,BM).
-        
-no_islands_row(IM,R,C,C1) =>
-    foreach (C2 in C+1..C1-1)
-        IM[R,C2] == 0
-    end.
-
-no_islands_col(IM,R,R1,C) =>
-    foreach (R2 in R+1..R1-1)
-        IM[R2,C] == 0
-    end.
-
-constrain_number(H,W,R,C,IM,BM) =>
-    BM[R,C] = [BRow, BCol],
-    Ts = [],
-    if BRow = [(_,T1)] then
-        Ts := [T1|Ts]
-    end,
-    if BCol = [(_,T2)] then
-        Ts := [T2|Ts]
-    end,
-    foreach (C1 in 1..C-1)
-        BM[R,C1] = [BRow1, _],
-        if BRow1 = [(C,T3)] then
-            Ts := [T3|Ts]
-        end
-    end,
-    foreach (R1 in 1..R-1)
-        BM[R1,C] = [_, BCol1],
-        if BCol1 = [(R,T4)] then
-            Ts := [T4|Ts]
-        end
-    end,
-    sum(Ts) #= IM[R,C].
-
-constrain_cross(H,W,R,C,IM,BM) =>
-    BM[R,C] = [BRow, BCol],
-    if BRow = [(C1,T1)] then
-        foreach (C2 in C+1..C1-1, R2 in 1..R-1)
-            BM[R2,C2] = [_, BCol2],
-            if BCol2 = [(R3,T3)] && R3 > R then
-                T1 #= 0 #\/ T3 #= 0
-            end
-        end
-    end,
-    if BCol = [(R1,T2)] then
-        foreach (R2 in R+1..R1-1, C2 in 1..C-1)
-            BM[R2,C2] = [BRow2, _],
-            if BRow2 = [(C3,T3)] && C3 > C then
-                T2 #= 0 #\/ T3 #= 0
-            end
-        end
-    end.
-
-output(H,W,BM) =>
-    Count = 0,
-    foreach (R in 1..H, C in 1..W)
-        BM[R,C] = [BRow, BCol],
-        if BRow = [(_,T1)] then
-            Count := Count+T1
-        end,
-        if BCol = [(_,T2)] then
-            Count := Count+T2
-        end
-    end,
-    println(Count),
-    foreach (R in 1..H, C in 1..W)
-        BM[R,C] = [BRow, BCol],
-        if BRow = [(C1,T1)] then
-            foreach (_ in 1..T1)
-                printf("%w %w %w %w\n", R-1, C-1, R-1, C1-1)
-            end
-        end,
-        if BCol = [(R1,T2)] then
-            foreach (_ in 1..T2)
-                printf("%w %w %w %w\n", R-1, C-1, R1-1, C-1)
-            end
-        end
-    end.
-    
-    
-    
-        
-    
-    
+  [R, C, Ri, Ci, Di, M, S, T] = [X.to_int : X in readln().split],
+  Grid = new_array(R, C),
+  foreach (I in 1..R)
+    Grid[I] = {X.to_int : X in readln().split}
+  end,
+  L = [[X.to_int + 1 : X in readln().split] : I in 1..T],
+  solve(Grid, Ri, Ci, Di, L, M, S).

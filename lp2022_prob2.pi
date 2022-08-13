@@ -1,0 +1,58 @@
+% https://github.com/lpcp-contest/lpcp-contest-2022/tree/main/problem-2
+% by Alfredo Beaumont, August 3, 2022
+% To run, use the command: picat lp2022_prob2 < instance	
+%
+import util.
+
+table(+,-,max)
+plan([_, [H|T]], Plan, Len), membchk(H, T) => Plan=[], Len=0.
+plan(S, Plan, Len) =>
+  Plan = [Action|Plan1],
+  action(S, S1, Action),
+  plan(S1, Plan1, Len1),
+  Len = Len1 + 1.
+
+update(A, B, SA, SB, EA, EB, drop_a) => EA = 0, EB = SB.
+update(A, B, SA, SB, EA, EB, drop_b) => EA = SA, EB = 0.
+update(A, B, SA, SB, EA, EB, fill_a) => EA = A, EB = SB.
+update(A, B, SA, SB, EA, EB, fill_b) => EA = SA, EB = B.
+update(A, B, SA, SB, EA, EB, a_to_b), SA >= B - SB => EA = SA - (B - SB), EB = B.
+update(A, B, SA, SB, EA, EB, a_to_b) => EA = 0, EB = SB + SA.
+update(A, B, SA, SB, EA, EB, b_to_a), SB >= A - SA => EA = A, EB = SB - (A - SA).
+update(A, B, SA, SB, EA, EB, b_to_a) => EA = SA + SB, EB = 0.
+
+action([[A, B], [[SA, SB]|T]], S1, Action) ?=>
+  Action = drop_a,
+  update(A, B, SA, SB, EA, EB, Action),
+  S1 = [[A, B], [[EA, EB] | [[SA, SB] | T]]].
+action([[A, B], [[SA, SB]|T]], S1, Action) ?=>
+  Action = drop_b,
+  update(A, B, SA, SB, EA, EB, Action),
+  S1 = [[A, B], [[EA, EB] | [[SA, SB] | T]]].
+action([[A, B], [[SA, SB]|T]], S1, Action) ?=>
+  Action = fill_a,
+  update(A, B, SA, SB, EA, EB, Action),
+  S1 = [[A, B], [[EA, EB] | [[SA, SB] | T]]].
+action([[A, B], [[SA, SB]|T]], S1, Action) ?=>
+  Action = fill_b,
+  update(A, B, SA, SB, EA, EB, Action),
+  S1 = [[A, B], [[EA, EB] | [[SA, SB] | T]]].
+action([[A, B], [[SA, SB]|T]], S1, Action) ?=>
+  Action = a_to_b,
+  update(A, B, SA, SB, EA, EB, Action),
+  S1 = [[A, B], [[EA, EB] | [[SA, SB] | T]]].
+action([[A, B], [[SA, SB]|T]], S1, Action) =>
+  Action = b_to_a,
+  update(A, B, SA, SB, EA, EB, Action),
+  S1 = [[A, B], [[EA, EB] | [[SA, SB] | T]]].
+  
+main =>
+  [A, B] = [X.to_int : X in readln().split()],
+  S = [[A, B], [[0, 0]]],
+  plan(S, Plan, Len),
+  %% Last one generates a duplicate, let's remove it.
+  println(Len-1),
+  foreach (I in 1..Len-1)
+    println(Plan[I])
+  end.
+  
