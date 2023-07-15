@@ -1,0 +1,65 @@
+https://github.com/lpcp-contest/lpcp-contest-2023/tree/main/problem-1
+
+import sat, util.
+
+main =>
+    read_input(M0),
+    N = len(M0),
+    M = new_array(N,N),
+    foreach (I in 1..N, J in 1..N)
+        if M0[I,J] == 0 then
+            M[I,J] = 0
+        elseif M0[I,J] == 1 then
+            M[I,J] = 1
+        end
+    end,
+    M :: 0..1,
+    N2 is N div 2,
+    foreach (I in 1..N)
+        sum([M[I,J] : J in 1..N]) #= N2
+    end,
+    foreach (I1 in 1..N, I2 in I1+1..N)
+        diff_vect(M[I1], M[I2], N)
+    end,
+    foreach (J in 1..N)
+        sum([M[I,J] : I in 1..N]) #= N2
+    end,
+    foreach (J1 in 1..N, J2 in J1+1..N)
+        Col1 = [M[I,J1] : I in 1..N],
+        Col2 = [M[I,J2] : I in 1..N],    
+        diff_vect(Col1, Col2, N)
+    end,
+    foreach (I in 1..N-2)
+        foreach (J in 1..N)
+            sum([M[I,J], M[I+1,J], M[I+2,J]]) #!= 0,
+            sum([M[I,J], M[I+1,J], M[I+2,J]]) #!= 3
+        end
+    end,
+    foreach (J in 1..N-2)
+        foreach (I in 1..N)
+            sum([M[I,J], M[I,J+1], M[I,J+2]]) #!= 0,
+            sum([M[I,J], M[I,J+1], M[I,J+2]]) #!= 3
+        end
+    end,
+    solve(M),
+    foreach (I in 1..N)
+        foreach (J in 1..N)
+            print(M[I,J]),
+            if (J != N) then
+                print(' ')
+            else
+                nl
+            end
+        end
+    end.
+
+read_input(M) =>
+    S = to_int(read_line()),
+    M = new_array(S),
+    foreach (I in 1..S)
+        M[I] = [to_int(Token) : Token in split(read_line())]
+    end.
+    
+diff_vect(A1,A2,N) =>
+    sum([A1[I] #!= A2[I] : I in 1..N]) #>= 1.
+    

@@ -1,0 +1,59 @@
+% https://github.com/lpcp-contest/lpcp-contest-2023/tree/main/problem-4
+import util, planner.
+        
+main =>
+    read_input(M),
+    init_state(M,StateM,RCs),
+    best_plan((StateM,RCs),Plan),
+    output(Plan).
+
+final((StateM,_)) =>
+    N = len(StateM),
+    foreach (R in 1..N, C in 1..N)
+        StateM[R,C] =< 1
+    end.
+
+action((StateM,RCs),NextState,Action,Cost) =>
+    N = len(StateM),
+    select((R,C),RCs,RCsRest),
+    member((R1,C1), [(R,C-1), (R,C+1), (R-1,C),(R+1,C)]),
+    R1 >= 1, R1 =< N,
+    C1 >= 1, C1 =< N,
+    StateM[R1,C1] != 0,
+    StateM1 = copy_term(StateM),
+    StateM1[R1,C1] := flip(StateM[R1,C1]),
+    RCs1 = [(R1,C1)|RCsRest],
+    NextState = (StateM1,RCs1),
+    Action = $move(R,C,R1,C1),
+    Cost = 1.
+
+read_input(M) =>
+    Row1 = {to_int(Token) : Token in read_line().split()},
+    N = len(Row1),
+    M = new_array(N),
+    M[1] = Row1,
+    foreach (I in 2..N)
+        M[I] = {to_int(Token) : Token in read_line().split()}
+    end.
+
+init_state(M,StateM,RCs) =>
+    N = len(M),
+    RCs = [(R,C) : R in 1..N, C in 1..N, (M[R,C] == 3 || M[R,C] == 4)],  % positions of romote controllers
+    StateM = new_array(N,N),
+    foreach (R in 1..N, C in 1..N)
+        StateM[R,C] = on_off(M[R,C])
+    end.
+
+on_off(0) = 0.
+on_off(1) = 1.
+on_off(2) = 2.        
+on_off(3) = 1.
+on_off(4) = 2.        
+
+flip(1) = 2.
+flip(2) = 1.    
+
+output([]) => true.
+output([move(R,C,R1,C1)|Plan]) =>
+    printf("%w %w %w %w\n",R,C,R1,C1),
+    output(Plan).

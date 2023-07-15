@@ -1,0 +1,22 @@
+% https://github.com/lpcp-contest/lpcp-contest-2023/tree/main/problem-4
+import util.
+        
+main =>
+    L = [to_int(Token) : Token in read_line().split()],
+    minof(search(reverse(L),Plan,X),X, output(Plan)).
+
+search(L@[X],Plan,Obj) => Obj = X, Plan = [L].
+search(L,Plan,Obj) =>
+    Plan = [L|Plan1],
+    select(X,L,L1),
+    select(Y,L1,L2),
+    Diff = abs(X-Y),
+    search([Diff|L2],Plan1,Obj).
+
+output([]) => true.
+output([L|Ls]) =>
+    output_line(reverse(L)),
+    output(Ls).
+
+output_line([X]) => println(X).
+output_line([X|L]) => printf("%w ",X), output_line(L).

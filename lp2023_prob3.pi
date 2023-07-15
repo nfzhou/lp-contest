@@ -1,0 +1,77 @@
+% https://github.com/lpcp-contest/lpcp-contest-2023/tree/main/problem-3
+import util, sat.
+        
+main =>
+    read_input(M0,S,TermA,TermB,CParts,RParts),
+    M = new_array(S,S),
+    foreach (R in 1..S, C in 1..S)
+        if M0[R,C] != 0 then
+            M[R,C] = M0[R,C]
+        end
+    end,
+    M :: 0..6,
+    foreach (C in 1..S)
+        sum([M[R,C] #>= 1 : R in 1..S]) #= CParts[C]
+    end,
+    foreach (R in 1..S)
+        sum([M[R,C] #>= 1 : C in 1..S]) #= RParts[R]
+    end,
+    Vs = [{(R,C),_} : R in 1..S, C in 1..S],
+    VMap = new_map(),
+    foreach ({Loc,B} in Vs)
+        Loc = (R,C),
+        B #<=> M[R,C] #> 0,
+        VMap.put(Loc,B)
+    end,
+    Es = [{(R,C),(R1,C1),_} : R in 1..S, C in 1..S, (R1,C1) in neibs(S,R,C), (R,C) @< (R1,C1)],
+    foreach ({(R,C),(R1,C1),B} in Es)
+        oriantation(B,M,R,C,R1,C1)
+    end,
+    path(Vs,Es, (TermA,1), (S,TermB)),
+    solve(M),
+    output(M,S).
+
+read_input(M,S,A,B,CParts,RParts) =>
+    [S,A,B] = [to_int(Token) : Token in read_line().split()],
+    CParts = {to_int(Token) : Token in read_line().split()},
+    RParts = {to_int(Token) : Token in read_line().split()},
+    M = new_array(S),
+    foreach (I in 1..S)
+        M[I] = {to_int(Token) : Token in read_line().split()}
+    end.
+
+oriantation(B,M,R,C,R,C1), C1 == C+1 =>
+    B #=> (M[R,C] #= 4 #/\ M[R,C1] #= 1 #\/
+           M[R,C] #= 4 #/\ M[R,C1] #= 3 #\/
+           M[R,C] #= 4 #/\ M[R,C1] #= 6 #\/
+           M[R,C] #= 5 #/\ M[R,C1] #= 1 #\/
+           M[R,C] #= 5 #/\ M[R,C1] #= 3 #\/
+           M[R,C] #= 5 #/\ M[R,C1] #= 6 #\/
+            M[R,C] #= 6 #/\ M[R,C1] #= 1 #\/        
+            M[R,C] #= 6 #/\ M[R,C1] #= 3 #\/
+            M[R,C] #= 6 #/\ M[R,C1] #= 6).
+oriantation(B,M,R,C,R1,C), R1 == R+1 =>
+    B #=> (M[R,C] #= 1 #/\ M[R1,C] #= 2 #\/
+           M[R,C] #= 1 #/\ M[R1,C] #= 3 #\/
+           M[R,C] #= 1 #/\ M[R1,C] #= 4 #\/
+           M[R,C] #= 2 #/\ M[R1,C] #= 2 #\/
+           M[R,C] #= 2 #/\ M[R1,C] #= 3 #\/
+           M[R,C] #= 2 #/\ M[R1,C] #= 4 #\/    
+           M[R,C] #= 5 #/\ M[R1,C] #= 2 #\/
+           M[R,C] #= 5 #/\ M[R1,C] #= 3 #\/
+           M[R,C] #= 5 #/\ M[R1,C] #= 4).
+    
+
+neibs(S,R,C) = [(R1,C1) : (R1,C1) in [(R,C-1),(R,C+1),(R-1,C),(R+1,C)], R1 >= 1, R1 =< S, C1 >= 1, C1 =< S].
+    
+output(M,S) =>
+    foreach (R in 1..S)
+        foreach (C in 1..S)
+            print(M[R,C]),
+            if C == S then
+                nl
+            else
+                print(' ')
+            end
+        end
+    end.

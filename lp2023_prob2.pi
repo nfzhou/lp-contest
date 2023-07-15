@@ -1,0 +1,40 @@
+% https://github.com/lpcp-contest/lpcp-contest-2023/tree/main/problem-2
+import cp, util.
+
+main =>
+    read_input(M0),
+    M = new_array(3,3),
+    foreach (I in 1..3, J in 1..3)
+        M[I,J] = new_list(5),
+        M[I,J] :: 0..5,
+        increasing(M[I,J])
+    end,
+    foreach (I in 1..3, J in 1..3)
+        neib_contribution(M,I,J-1,C1),
+        neib_contribution(M,I,J+1,C2),
+        neib_contribution(M,I-1,J,C3),
+        neib_contribution(M,I+1,J,C4),        
+        M0[I,J]+sum(M[I,J])+C1+C2+C3+C4 #= 9
+    end,
+    solve(M),
+    foreach (I in 1..3, J in 1..3)
+        foreach (X in M[I,J], X != 0)
+            printf("%d ", X)
+        end,
+        println(0)
+    end.
+
+neib_contribution(M,0,J,C) => C = 0.
+neib_contribution(M,I,0,C) => C = 0.
+neib_contribution(M,4,J,C) => C = 0.
+neib_contribution(M,I,4,C) => C = 0.
+neib_contribution(M,I,J,C) =>
+    C #= sum([X #!= 0 : X in M[I,J]]).
+
+read_input(M) =>
+    M = new_array(3,3),
+    foreach (I in 1..3, J in 1..3)
+        M[I,J] = to_int(read_line())
+    end.
+
+    
