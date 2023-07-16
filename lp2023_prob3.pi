@@ -17,11 +17,8 @@ main =>
         sum([M[R,C] #>= 1 : C in 1..S]) #= RParts[R]
     end,
     Vs = [{(R,C),_} : R in 1..S, C in 1..S],
-    VMap = new_map(),
-    foreach ({Loc,B} in Vs)
-        Loc = (R,C),
+    foreach ({(R,C),B} in Vs)
         B #<=> M[R,C] #> 0,
-        VMap.put(Loc,B)
     end,
     Es = [{(R,C),(R1,C1),_} : R in 1..S, C in 1..S, (R1,C1) in neibs(S,R,C), (R,C) @< (R1,C1)],
     foreach ({(R,C),(R1,C1),B} in Es)
