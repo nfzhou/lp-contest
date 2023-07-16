@@ -10,6 +10,7 @@ search(L,Plan,Obj) =>
     Plan = [L|Plan1],
     select(X,L,L1),
     select(Y,L1,L2),
+    X =< Y,             % break symmetry
     Diff = abs(X-Y),
     search([Diff|L2],Plan1,Obj).
 
