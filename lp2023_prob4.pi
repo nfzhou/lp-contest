@@ -14,10 +14,10 @@ search(L,Plan,Obj) =>
     Diff = abs(X-Y),
     search([Diff|L2],Plan1,Obj).
 
-output([]) => true.
-output([L|Ls]) =>
-    output_line(reverse(L)),
-    output(Ls).
+output([_|Ls]) =>
+    foreach (L in Ls)
+        output_line(reverse(L))
+    end.
 
 output_line([X]) => println(X).
 output_line([X|L]) => printf("%w ",X), output_line(L).
