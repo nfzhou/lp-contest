@@ -3,7 +3,8 @@ import util.
         
 main =>
     L = [to_int(Token) : Token in read_line().split()],
-    minof(search(reverse(L),Plan,X),X, output(Plan)).
+    minof(search(L,Plan,X),X),
+    output(Plan).
 
 search(L@[X],Plan,Obj) => Obj = X, Plan = [L].
 search(L,Plan,Obj) =>
@@ -16,7 +17,7 @@ search(L,Plan,Obj) =>
 
 output([_|Ls]) =>
     foreach (L in Ls)
-        output_line(reverse(L))
+        output_line(L)
     end.
 
 output_line([X]) => println(X).
