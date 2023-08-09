@@ -20,6 +20,7 @@ action((StateM,RCs),NextState,Action,Cost) =>
     R1 >= 1, R1 =< N,
     C1 >= 1, C1 =< N,
     StateM[R1,C1] != 0,
+    not member((R1,C1), RCsRest),
     StateM1 = copy_term(StateM),
     StateM1[R1,C1] := flip(StateM[R1,C1]),
     RCs1 = [(R1,C1)|RCsRest],
