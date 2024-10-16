@@ -37,8 +37,3 @@ read_input(M) =>
     foreach (I in 1..3, J in 1..3)
         M[I,J] = to_int(read_line())
     end.
-
-output(M) =>
-    foreach (R in M)
-        println(R)
-    end.
