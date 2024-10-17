@@ -1,0 +1,67 @@
+import sat.
+
+test =>
+Is = $[cell(1,1,1),
+cell(1,2,3),
+cell(1,3,0),
+cell(1,4,1),
+cell(1,5,2),
+cell(2,1,3),
+cell(2,2,2),
+cell(2,3,0),
+cell(2,4,1),
+cell(2,5,3),
+cell(3,1,3),
+cell(3,2,3),
+cell(3,3,0),
+cell(3,4,0),
+cell(3,5,1),
+cell(4,1,2),
+cell(4,2,2),
+cell(4,3,1),
+cell(4,4,2),
+cell(4,5,0)],
+go(Is).
+
+main([File]) =>
+    Is = read_file_terms(File),
+    go(Is).
+
+go(Is) =>
+    A = new_array(4,5),
+    foreach (D in Is, D = $cell(R,C,V))
+        A[R,C] = V
+    end,
+    Visited = new_array(4,5),
+    Ps = [(I,J) : I in 0..3, J in 0..3, I <= J],
+    plan(Ps,A,Visited,Plan),
+    foreach ((R1,C1,R2,C2) in Plan)
+        printf("tile(%d,%d,%d,%d).\n",R1,C1,R2,C2)
+    end.
+
+plan([],A,Visited,Plan) => Plan = [].
+plan([(I,J)|Ps],A,Visited,Plan) =>
+    lookup(I,J,A,Visited,R1,C1,R2,C2),
+    Plan=[(R1,C1,R2,C2)|Plan1],
+    plan(Ps,A,Visited,Plan1).
+
+lookup(I,J,A,Visited,R1,C1,R2,C2) =>
+    between(1,4,R1),
+    between(1,5,C1),
+    member((R2,C2),[(R1-1,C1), (R1+1,C1), (R1,C1-1), (R1,C1+1)]),
+    R2 >= 1, R2 =< 4,
+    C2 >= 1, C2 =< 5,
+    (A[R1,C1] = I, A[R2,C2] = J; A[R1,C1] = J, A[R2,C2] = I),
+    var(Visited[R1,C1]),
+    var(Visited[R2,C2]),
+    Visited[R1,C1] = 1,
+    Visited[R2,C2] = 1.
+    
+    
+    
+
+    
+
+    
+    
+
