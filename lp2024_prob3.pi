@@ -30,8 +30,3 @@ main([File]) =>
 	    (M[I1,J1] == 1 ->printf("area(%d,%d,%d,%d).\n",R,C,I1,J1); true)
 	end
     end.
-    
-	 
-
-
-

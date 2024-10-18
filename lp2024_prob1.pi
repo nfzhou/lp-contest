@@ -70,17 +70,3 @@ regist_output(E,Out,Vo,SymTab) =>
         SymTab.put(Out,Vo)
     ).
     
-    
-    
-
-
-    
-    
-    
-
-    
-    
-    
-    
-    
-   

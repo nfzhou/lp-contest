@@ -32,12 +32,3 @@ lookup(I,J,A,Visited,R1,C1,R2,C2) =>
     var(Visited[R2,C2]),
     Visited[R1,C1] = 1,
     Visited[R2,C2] = 1.
-    
-    
-    
-
-    
-
-    
-    
-
