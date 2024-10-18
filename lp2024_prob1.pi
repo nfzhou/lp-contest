@@ -1,0 +1,86 @@
+% https://github.com/nfzhou/lp-contest/blob/main/lp2024_problems.pdf
+
+import sat.
+
+main([File]) =>
+    Fs = read_file_terms(File),
+    cl_facts(Fs),
+    Gs1 = find_all(G, unary(G)),
+    UGates = [$ugate(G,_T,_In,_Out) : G in Gs1],
+    Gs2 = find_all(G, binary(G)),
+    BGates = [$bgate(G,_T,_In1,_In2,_Out) : G in Gs2],
+    foreach ($ugate(G,T,In,Out) in UGates)
+        T :: 0..1,
+        input(G,1,In),
+        output(G,Out)
+    end,
+    foreach ($bgate(G,T,In1,In2,Out) in BGates)
+        T :: 0..1,
+        input(G,1,In1),
+        input(G,2,In2),    
+        output(G,Out)
+    end,
+    run(1,UGates,BGates),
+    solve((UGates,BGates)),
+    foreach ($ugate(G,T,_In,_Out) in UGates)
+        printf("function(%w,%w).\n",G,T)
+    end,
+    foreach ($bgate(G,T,_In1,_In2,_Out) in BGates)
+        printf("function(%w,%w).\n",G,T)
+    end.
+
+run(E,UGates,BGates), entry(E,_,_) =>
+    SymTab = new_map(),
+    run_aux(E,UGates,SymTab),
+    run_aux(E,BGates,SymTab),    
+    run(E+1,UGates,BGates).
+run(E,UGates,BGates) => true.
+
+run_aux(E,[],SymTab) => true.
+run_aux(E,[ugate(G,T,In,Out)|Gates],SymTab) =>
+    retrieve_input(E,In,Vi,SymTab),
+    regist_output(E,Out,Vo,SymTab),
+    #~T #=> Vi #= Vo,
+    T #=> (Vo #<=> #~Vi),
+    run_aux(E,Gates,SymTab).
+run_aux(E,[bgate(G,T,In1,In2,Out)|Gates],SymTab) =>
+    retrieve_input(E,In1,Vi1,SymTab),
+    retrieve_input(E,In2,Vi2,SymTab),    
+    regist_output(E,Out,Vo,SymTab),
+    T #=> (Vo #<=> Vi1 #\/ Vi2),
+    #~T #=> (Vo #<=> Vi1 #/\ Vi2),
+    run_aux(E,Gates,SymTab).
+
+retrieve_input(E,In,Vi,SymTab),
+    entry(E,In,Vi)
+=>
+    true.
+retrieve_input(E,In,Vi,SymTab),
+    SymTab.has_key(In)
+=>
+    Vi = SymTab.get(In).
+retrieve_input(E,In,Vi,SymTab) =>
+    SymTab.put(In,Vi).
+
+regist_output(E,Out,Vo,SymTab) =>
+    (value(E,Out,Vo); true),
+    (SymTab.has_key(Out) ->
+        Vo = SymTab.get(Out)
+    ;    
+        SymTab.put(Out,Vo)
+    ).
+    
+    
+    
+
+
+    
+    
+    
+
+    
+    
+    
+    
+    
+   

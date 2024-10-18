@@ -1,3 +1,5 @@
+% https://github.com/nfzhou/lp-contest/blob/main/lp2024_problems.pdf
+
 import sat.
 
 main([File]) =>
@@ -8,14 +10,14 @@ main([File]) =>
     foreach (I in 1..N)
         Ps[I] = (R,C,V),
         M = new_array(5,5),
-        M[R,C] = 1,
-        foreach ((R1,C1,_) in Ps, (R1,C1) != (R,C))
-            M[R1,C1] = 0
-        end,
-        M :: 0..1,
-        sum([M[I1,J1] : I1 in 1..5, J1 in 1..5]) #= V,
-        scc_grid(M),
-        As[I] = M
+	M[R,C] = 1,
+	foreach ((R1,C1,_) in Ps, (R1,C1) != (R,C))
+	    M[R1,C1] = 0
+	end,
+	M :: 0..1,
+	sum([M[I1,J1] : I1 in 1..5, J1 in 1..5]) #= V,
+	scc_grid(M),
+	As[I] = M
     end,
     foreach (R in 1..5, C in 1..5)
         sum([As[I,R,C] : I in 1..N]) #=< 1
@@ -23,13 +25,13 @@ main([File]) =>
     solve(As),
     foreach (I in 1..N)
         Ps[I] = (R,C,_),
-        M = As[I],
-        foreach (I1 in 1..5, J1 in 1..5)
-            (M[I1,J1] == 1 ->printf("area(%d,%d,%d,%d).\n",R,C,I1,J1); true)
-        end
+	M = As[I],
+	foreach (I1 in 1..5, J1 in 1..5)
+	    (M[I1,J1] == 1 ->printf("area(%d,%d,%d,%d).\n",R,C,I1,J1); true)
+	end
     end.
     
-     
+	 
 
 
 

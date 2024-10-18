@@ -1,0 +1,63 @@
+% https://github.com/nfzhou/lp-contest/blob/main/lp2024_problems.pdf
+
+import sat.
+
+main([File]) =>
+    Is = read_file_terms(File),
+    once member($width(NCols),Is),
+    once member($height(NRows),Is),
+    CostM = new_array(NRows,NCols),
+    foreach ($cost(C,R,Cost) in Is)
+        CostM[R,C] = Cost
+    end,
+    RewardM = new_array(NRows,NCols),
+    foreach ($reward(C,R,Reward) in Is)
+        RewardM[R,C] = Reward
+    end,
+    once member($length(Len),Is),
+    once member($budget(CostLimit),Is),
+    A = new_array(NRows,NCols),
+    foreach (R in 1..NRows, C in 1..NCols)
+        if CostM[R,C] < 0 then A[R,C] = 0 end
+    end,
+    A :: 0..1,
+    my_hcp_grid(A,Es),
+    Inner = new_array(NRows,NCols),
+    Inner :: 0..1,
+    foreach (R in 1..NRows, C in 1..NCols)
+        sum([A[R1,C] : R1 in 1..R-1]) #>= 1 #/\ sum([A[R1,C] : R1 in R+1..NRows]) #>= 1 #<=> Inner[R,C] #= 1,
+        sum([A[R,C1] : C1 in 1..C-1]) #>= 1 #/\ sum([A[R,C1] : C1 in C+1..NCols]) #>= 1 #<=> Inner[R,C] #= 1
+    end,
+    sum([Inner[R,C] : R in 1..NRows, C in 1..NCols]) #>= 1,   % non-empty
+    sum([A[R,C] : R in 1..NRows, C in 1..NCols]) #=< Len,
+    FenceReward #= sum([A[R,C]*RewardM[R,C]  : R in 1..NRows, C in 1..NCols]),
+    InnerReward #= sum([Inner[R,C]*RewardM[R,C]  : R in 1..NRows, C in 1..NCols]),
+    TotalReward #= FenceReward+InnerReward,
+    TotalCost #= sum([A[R,C]*CostM[R,C]  : R in 1..NRows, C in 1..NCols]),
+    TotalCost #=< CostLimit,
+    Q #= TotalReward - TotalCost,
+    solve($[max(Q)],(A,Es)),
+    foreach ({(R1,C1),(R2,C2),1} in Es)
+        printf("fence(%d,%d,%d,%d).\n",R1,C1,R2,C2)
+    end.
+
+% taken from Picat's User's Guide. Do this because Es is needed
+my_hcp_grid(A,Es) =>  
+        NRows = len(A),  
+        NCols = len(A[1]),  
+        Vs = [{(R,C), A[R,C]} :  
+                    R in 1..NRows,  
+                    C in 1..NCols],  
+        Es = [{(R,C), (R1,C1), _} :  
+                    R in 1..NRows,  
+                    C in 1..NCols,  
+                    (R1,C1) in neibs(A,NRows,NCols,R,C)],  
+        hcp(Vs,Es).  
+ 
+neibs(A,NRows,NCols,R,C) =  
+        [(R1,C1) : (R1,C1) in [(R-1,C), (R+1,C),  
+                               (R,C-1), (R,C+1)],  
+                    R1 >= 1, R1 =< NRows,  
+                    C1 >= 1, C1 =< NCols,  
+                    A[R1,C1] !== 0]. 
+
