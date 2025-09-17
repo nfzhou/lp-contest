@@ -1,0 +1,55 @@
+% https://github.com/nfzhou/lp-contest/blob/main/lp2024_problems.pdf
+
+import sat.
+
+main([File]) =>
+    Is = read_file_terms(File),
+    M = new_array(4,5),
+    foreach (D in Is, D = $cell(R,C,V))
+        M[R,C] = V
+    end,
+    Combs = [(I,J) : I in 0..3, J in 0..3, I <= J],
+    build_rects(M,Combs,Rects),
+    diffn(Rects),
+    solve(Rects),
+    foreach ([R,C,H,W] in Rects)
+        printf("tile(%d,%d,%d,%d).\n",R,C,R+H-1,C+W-1)
+    end.
+
+build_rects(M,[],Rects) => Rects = [].
+build_rects(M,[(I,J)|Combs],Rects) => 
+    retrieve_dom(M,1,1,I,J,Table),
+    table_in({R,C,W,H},Table),
+    Rects = [[R,C,H,W]|Rects1],
+    build_rects(M,Combs,Rects1).
+
+retrieve_dom(M,4,5,I,J,Table) => Table = [].
+retrieve_dom(M,R,C,I,J,Table), C == 5 =>
+    E1 = M[R,C], E2 = M[R+1,C], 
+    (((E1,E2) = (I,J) || (E1,E2) = (J,I)) ->
+        Table = [{R,C,1,2}|Table1]
+    ;
+        Table = Table1
+    ),
+    retrieve_dom(M,R+1,1,I,J,Table1).
+retrieve_dom(M,R,C,I,J,Table), R == 4 =>
+    E1 = M[R,C], E2 = M[R,C+1], 
+    (((E1,E2) = (I,J) || (E1,E2) = (J,I)) ->
+        Table = [{R,C,2,1}|Table1]
+    ;
+        Table = Table1
+    ),
+    retrieve_dom(M,R,C+1,I,J,Table1).
+retrieve_dom(M,R,C,I,J,Table) =>
+    E1 = M[R,C], E2 = M[R,C+1], E3 = M[R+1,C],
+    (((E1,E2) = (I,J) || (E1,E2) = (J,I)) ->
+        Table = [{R,C,2,1}|Table1]
+    ;
+        Table = Table1
+    ),
+    (((E1,E3) = (I,J) || (E1,E3) = (J,I)) ->
+        Table1 = [{R,C,1,2}|Table2]
+    ;
+        Table1 = Table2
+    ),
+    retrieve_dom(M,R,C+1,I,J,Table2).
