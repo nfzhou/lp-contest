@@ -1,0 +1,53 @@
+% https://github.com/lpcp-contest/lpcp-contest-2025/tree/main/problem-3
+
+import sat, util.
+
+main =>
+    [N, M] = [X.to_int() : X in readln().split()],
+    [P, Q] = [X.to_int() : X in readln().split()],
+/*
+%    N = 2, M = 2,
+%    P = 1, Q = 2,
+%    N = 5, M = 4,
+%    P = 6, Q = 9,
+%    N = 20, M = 20,
+%    P = 2, Q = 3,
+*/
+    Vs = [{(R,C),1} : R in 1..N, C in 1..M],
+    Es = [],
+    foreach (R in 1..N, C in 1..M, (R1,C1) in neibs(N,M,R,C,P,Q))
+        Es := [{(R,C),(R1,C1)}, {(R1,C1),(R,C)}|Es],
+    end,
+    Es1 = [{V1,V2,_} : {V1,V2} in sort_remove_dups(Es)],
+    hcp(Vs,Es1),
+    solve(Es1),
+    foreach ({(R,C),(R1,C1),1} in Es1)
+        printf("%w %w %w %w\n",R,C,R1,C1)
+    end.
+
+neibs(N,M,R,C,P,Q) = NBs =>
+    NBs = [(ar(N,M,R,P),ac(N,M,C,Q)),
+           (ar(N,M,R,P),sc(N,M,C,Q)),
+           (sr(N,M,R,P),ac(N,M,C,Q)),
+           (sr(N,M,R,P),sc(N,M,C,Q)),
+           (ar(N,M,R,Q),ac(N,M,C,P)), 
+           (ar(N,M,R,Q),sc(N,M,C,P)), 
+           (sr(N,M,R,Q),ac(N,M,C,P)),
+           (sr(N,M,R,Q),sc(N,M,C,P))].sort_remove_dups().
+
+ar(N,M,R,D) =  (R-1+D) mod N +1.
+
+ac(N,M,C,D) = (C-1+D) mod M + 1.
+
+sr(N,M,R,D) = (R-1-D) mod N + 1.
+
+sc(N,M,C,D) = (C-1-D) mod M + 1.
+
+                
+    
+
+
+    
+    
+    
+
