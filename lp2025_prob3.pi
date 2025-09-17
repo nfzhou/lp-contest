@@ -41,13 +41,5 @@ ac(N,M,C,D) = (C-1+D) mod M + 1.
 
 sr(N,M,R,D) = (R-1-D) mod N + 1.
 
-sc(N,M,C,D) = (C-1-D) mod M + 1.
-
-                
-    
-
-
-    
-    
-    
+sc(N,M,C,D) = (C-1-D) mod M + 1.    
 
