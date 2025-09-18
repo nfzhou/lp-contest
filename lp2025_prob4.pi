@@ -46,29 +46,18 @@ find(N,Es0,PsArray) =>
     end,
     solve(EsArray),
     println(K),
-    UsedEs = [(V1,V2) : I in 1..K, {V1,V2,1} in EsArray[I]],
-    extract_paths(PsArray.to_list, UsedEs, Paths),
-    foreach (Path in Paths)
-        output_path(Path),
-    end.            
-    
-extract_paths([], Es, Paths) => Paths = [].
-extract_paths([(V1,V2)|Ps], Es, Paths) =>
-    Paths = [Path|Paths1],
-    extract_path(V1,V2,Es,Es1,Path),
-    extract_paths(Ps, Es1, Paths1).
+    foreach (I in 1..K)
+        (S,D) = PsArray[I],
+        output_path(S,D,[S],EsArray[I])
+    end.
 
-extract_path(V,V,Es,EsR,Path) => Es = EsR, Path = [].
-extract_path(V1,V2,Es,EsR,Path) => 
-    (select((V1,T), Es, Es1); select((T,V1), Es, Es1)),
-    Path = [(V1,T)|Path1],
-    extract_path(T,V2,Es1,EsR,Path1).
-
-output_path([(V1,V2)]) =>
-    printf("%w %w\n",V1,V2).
-output_path([(V1,V2)|Path]) =>
-    printf("%w ",V1),
-    output_path(Path).
+output_path(V,V,Visited,Es) => 
+    printf("%w\n",V).
+output_path(V,D,Visited,Es) => 
+    (member({V,T,1},Es); member({T,V,1},Es)),
+    not member(T,Visited),
+    printf("%w ",V),
+    output_path(T,D,[T|Visited],Es).
     
 
     
