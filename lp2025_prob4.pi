@@ -1,0 +1,76 @@
+% https://github.com/lpcp-contest/lpcp-contest-2025/tree/main/problem-4
+
+import sat, util.
+
+main =>
+    main([stdin]).
+
+main([File]) =>
+    (File == stdin -> IS = stdin; IS = open(File)),
+    [N,M,K] = [X.to_int() : X in IS.readln().split()],
+    Es = [],
+    foreach (I in 1..M)
+        [V1,V2] = [X.to_int() : X in IS.readln().split()],
+        Es := [(V1,V2)|Es],
+    end,
+    Ps = [],
+    foreach (I in 1..K)
+        [V1,V2] = [X.to_int() : X in IS.readln().split()],
+        Ps := [(V1,V2)|Ps]
+    end,
+    close(IS),
+    between(K,-1,1,K1),
+    choose(Ps,K,K1,ChosenPs),
+    find(N,Es,to_array(ChosenPs)).
+
+choose(Ps,K,K1,ChosenPs), K1 > K => fail.
+choose(Ps,K,K1,ChosenPs), K == K1 => ChosenPs = Ps.
+choose([P|Ps],K,K1,ChosenPs) ?=>
+    ChosenPs = [P|ChosenPs1],
+    choose(Ps,K-1,K1-1,ChosenPs1).
+choose([_|Ps],K,K1,ChosenPs) =>
+    choose(Ps,K-1,K1,ChosenPs).
+
+find(N,Es0,PsArray) =>
+    K = len(PsArray),
+    EsArray = new_array(K),
+    foreach (I in 1..K)
+        (S,D) = PsArray[I],
+        Vs = [{V,_} : V in 1..N],
+        Es = [{V1,V2,B} : (V1,V2) in Es0, B :: 0..1],
+        EsArray[I] = Es,
+        path(Vs,Es,S,D)
+    end,
+    foreach ((V1,V2) in Es0)
+        sum([B : I in 1..K, member({V1,V2,B}, EsArray[I])]) #=< 1
+    end,
+    solve(EsArray),
+    println(K),
+    UsedEs = [(V1,V2) : I in 1..K, {V1,V2,1} in EsArray[I]],
+    extract_paths(PsArray.to_list, UsedEs, Paths),
+    foreach (Path in Paths)
+        output_path(Path),
+    end.            
+    
+extract_paths([], Es, Paths) => Paths = [].
+extract_paths([(V1,V2)|Ps], Es, Paths) =>
+    Paths = [Path|Paths1],
+    extract_path(V1,V2,Es,Es1,Path),
+    extract_paths(Ps, Es1, Paths1).
+
+extract_path(V,V,Es,EsR,Path) => Es = EsR, Path = [].
+extract_path(V1,V2,Es,EsR,Path) => 
+    (select((V1,T), Es, Es1); select((T,V1), Es, Es1)),
+    Path = [(V1,T)|Path1],
+    extract_path(T,V2,Es1,EsR,Path1).
+
+output_path([(V1,V2)]) =>
+    printf("%w %w\n",V1,V2).
+output_path([(V1,V2)|Path]) =>
+    printf("%w ",V1),
+    output_path(Path).
+
+    
+
+    
+
