@@ -1,0 +1,50 @@
+% https://github.com/lpcp-contest/lpcp-contest-2025/tree/main/problem-4
+
+import sat, util.
+
+main =>
+    main([stdin]).
+
+main([File]) =>
+    (File == stdin -> IS = stdin; IS = open(File)),
+    [NR,NC] = [to_int(X) : X in IS.readln().split()],
+    Dr = {to_int(X) : X in IS.readln().split()},
+    Dc = {to_int(X) : X in IS.readln().split()},
+    close(IS),
+    M = new_array(NR,NC),
+    foreach (R in 1..NR)
+        foreach (C in 1..NC)
+            M[R,C] :: 0..Dr[R]
+        end,
+        sum([M[R,C] : C in 1..NC]) #= Dr[R]
+    end,
+    foreach (C in 1..NC)
+        foreach (R in 1..NR)
+            M[R,C] :: 0..Dc[C]
+        end,
+        sum([M[R,C] : R in 1..NR]) #= Dc[C]
+    end,
+    A = new_array(NR,NC),
+    A :: 0..1,
+    foreach (R in 1..NR, C in 1..NC)
+        M[R,C] #= 0 #<=> A[R,C] #= 0
+    end,
+    Vs = [{(R,C), A[R,C]} : R in 1..NR, C in 1..NC],
+    Es = [{(R,C), (R1,C1), _} : R in 1..NR, C in 1..NC, (R1,C1) in neibs(NR,NC,R,C)],
+    scc(Vs,Es),    % connected
+    foreach (R in 2..NR-1, C in 2..NC-1)   % no holes
+        M[R,C] #/\ #~M[R-1,C] #=> sum([M[R1,C] : R1 in 1..R-2]) #= 0,
+        M[R,C] #/\ #~M[R+1,C] #=> sum([M[R1,C] : R1 in R+2..NR]) #= 0,
+        M[R,C] #/\ #~M[R,C-1] #=> sum([M[R,C1] : C1 in 1..C-2]) #= 0,
+        M[R,C] #/\ #~M[R,C+1] #=> sum([M[R,C1] : C1 in C+2..NC]) #= 0
+    end,
+    solve(M),
+    foreach (R in 1..NR)
+        foreach (C in 1..NC)
+            printf("%w ", M[R,C])
+        end,
+        nl
+    end.
+
+neibs(NR,NC,R,C) = [(R1,C1) : (Dr,Dc) in [(0,-1),(0,1),(-1,0),(1,0),(-1,-1),(-1,1),(1,-1),(1,1)],
+                               R1 = R+Dr, C1 = C+Dc, R1 >= 1, R1 <= NR, C1 >= 1, C1 <= NC].
