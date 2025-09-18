@@ -69,7 +69,6 @@ output_path([(V1,V2)]) =>
 output_path([(V1,V2)|Path]) =>
     printf("%w ",V1),
     output_path(Path).
-
     
 
     
