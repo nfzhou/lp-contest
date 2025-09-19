@@ -1,0 +1,67 @@
+% https://github.com/lpcp-contest/lpcp-contest-2025/tree/main/problem-5
+
+import sat, util.
+
+main =>
+    main([stdin]).
+
+main([File]) =>
+    (File == stdin -> IS = stdin; IS = open(File)),
+    N = to_int(readln(IS)),
+    M = new_array(N),
+    foreach (I in 1..N)
+        M[I] = {to_int(X) : X in IS.readln().split()}
+    end,
+    close(IS),
+    N2 = N*N,
+    between(3, N2 div 3, K),
+    Ps = [(R,C) : R in 1..N, C in 1..N],
+    choose(Ps,N2,K,ChosenPs),
+    A = new_array(N,N),
+    foreach ((R,C) in ChosenPs)
+        A[R,C] = M[R,C]
+    end,
+    A :: 1..N,
+    foreach (I in 1..N)
+        all_different(A[I]),
+        all_different([A[R,I] : R in 1..N])
+    end,
+    (find1(N,A) -> 
+        output(M,ChosenPs)
+    ;
+        fail
+    ).
+    
+choose(Ps,K,K1,ChosenPs), K1 > K => fail.
+choose(Ps,K,K1,ChosenPs), K == K1 => ChosenPs = Ps.
+choose([P|Ps],K,K1,ChosenPs) ?=>
+    ChosenPs = [P|ChosenPs1],
+    choose(Ps,K-1,K1-1,ChosenPs1).
+choose([_|Ps],K,K1,ChosenPs) =>
+    choose(Ps,K-1,K1,ChosenPs).
+
+find1(N,A) ?=>
+    Map = get_global_map(),
+    solve(A),
+    Map.put(sol,A),
+    fail.
+find1(N,A) =>
+    Map = get_global_map(),
+    A1 = Map.get(sol),
+    sum([A[R,C] #!= A1[R,C] : R in 1..N, C in 1..N]) #> 0,
+    (solve(A) -> fail; true).
+
+output(M,Ps) =>
+    N = len(M),
+    foreach (R in 1..N)
+        foreach (C in 1..N)
+            if member((R,C), Ps) then
+                printf("%w ",M[R,C])
+            else
+                printf("%w ",0)
+            end
+        end,
+        nl
+    end.
+
+    
