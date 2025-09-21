@@ -1,0 +1,200 @@
+% https://github.com/lpcp-contest/lpcp-contest-2025/tree/main/problem-2
+
+import sat, util.
+
+main =>
+    main([stdin]).
+
+main([File]) =>
+    read_input(File,NR0,NC0,Profs,Studs,Blacks,Whites,OutPos,Adms),
+    NR = NR0+1,
+    NC = NC0+1,
+    Vs = [{(R,C),_} : R in 1..NR, C in 1..NC],
+    Es = [{(R,C),(R1,C1),_} : R in 1..NR, C in 1..NC, (R1,C1) in neibs(NR,NC,R,C)],
+    hcp(Vs,Es),
+    EMap = new_map(),
+    foreach ({V1,V2,B} in Es)
+        EMap.put((V1,V2),B)
+    end,
+    %
+    IM = new_array(NR0,NC0),    % IM[R,C] = 1 iff (R,C) is inside the loop
+    foreach ([R,C] in Profs)   % every professor is inside the loop
+        IM[R,C] = 1
+    end,
+    foreach ([R,C] in Studs)   % every student is outside the loop
+        IM[R,C] = 0
+    end,
+    IM :: 0..1,
+    constrain_inside(IM,EMap,NR0,NC0),
+
+    %    
+    foreach ([R,C] in Blacks)  % the fence must make a 90° turn
+        constrain_black(EMap,R,C)
+    end,
+    % continue straight through, but must also make at least one turn immediately before or after
+    foreach ([R,C] in Whites)  
+        constrain_white(EMap,R,C)
+    end,
+
+    foreach ([R,C,V] in OutPos)
+        IM[R,C] #= 1,
+        constrain_visible(EMap,NR0,NC0,R,C,V),
+    end,
+
+    foreach ([R,C,V] in Adms)   % surrounded by exactly as many fence segments as the number 
+        Bl = edge_left(EMap,R,C),   
+        Br = edge_right(EMap,R,C),   
+        Bu = edge_up(EMap,R,C),   
+        Bd = edge_down(EMap,R,C),   
+        Bl+Br+Bu+Bd #= V
+    end,
+
+    solve((IM,Es)),
+    output(Es).
+
+read_input(File,NR0,NC0,Profs,Studs,Blacks,Whites,OutPos,Adms) =>
+    (File == stdin -> IS = stdin; IS = open(File)),
+    [NR0,NC0,P,S,B,W,O,A] = [to_int(X) : X in IS.readln().split()],
+    Profs = [Pos : _ in 1..P, Pos = [to_int(X) : X in IS.readln().split()]],
+    Studs = [Pos : _ in 1..S, Pos = [to_int(X) : X in IS.readln().split()]],
+    Blacks = [Pos : _ in 1..B, Pos = [to_int(X) : X in IS.readln().split()]],
+    Whites = [Pos : _ in 1..W, Pos = [to_int(X) : X in IS.readln().split()]],
+    OutPos = [PosV : _ in 1..O, PosV = [to_int(X) : X in IS.readln().split()]],
+    Adms = [PosV : _ in 1..A, PosV = [to_int(X) : X in IS.readln().split()]],
+    close(IS).
+
+neibs(NR,NC,R,C) = [(R1,C1) : (Dr,Dc) in [(0,-1),(0,1),(-1,0),(1,0)],
+                               R1 = R+Dr, C1 = C+Dc, R1 >= 1, R1 <= NR, C1 >= 1, C1 <= NC].
+
+edge_left(EMap,R,C) = B =>
+    V1 = (R,C),
+    V2 = (R+1,C),
+    B1 = EMap.get((V1,V2), 0),
+    B2 = EMap.get((V2,V1), 0),
+    B #= (B1 #\/ B2).
+
+edge_right(EMap,R,C) = edge_left(EMap,R,C+1).
+
+edge_up(EMap,R,C) = B =>
+    V1 = (R,C),
+    V2 = (R,C+1),
+    B1 = EMap.get((V1,V2), 0),
+    B2 = EMap.get((V2,V1), 0),
+    B #= (B1 #\/ B2).
+
+edge_down(EMap,R,C) = edge_up(EMap,R+1,C).
+
+constrain_black(EMap,R,C) =>
+    Bl = edge_left(EMap,R,C),   
+    Bu = edge_up(EMap,R,C),
+    Blu = edge_up(EMap,R,C-1),
+    Bul = edge_left(EMap,R-1,C),
+    (Bl #/\ Bu) #\/ (Bl #/\ Blu) #\/ (Bu #/\ Bul) #\/ (Blu #/\ Bul),
+    turn(EMap,R,C+1,T1),
+    turn(EMap,R+1,C,T2),
+    turn(EMap,R,C-1,T3),
+    turn(EMap,R-1,C,T4),
+    Bu #=> #~T1,
+    Bl #=> #~T2, 
+    Blu #=> #~T3,
+    Bul #=> #~T4.
+
+turn(EMap,R,C,T) =>
+    Bl = edge_left(EMap,R,C),   
+    Bu = edge_up(EMap,R,C),
+    Blu = edge_up(EMap,R,C-1),
+    Bul = edge_left(EMap,R-1,C),
+    T #<=> ((Bl #/\ Bu) #\/ (Bl #/\ Blu) #\/ (Bu #/\ Bul) #\/ (Blu #/\ Bul)).
+
+constrain_white(EMap,R,C) =>
+    Bl = edge_left(EMap,R,C),   
+    Bul = edge_left(EMap,R-1,C),
+    Bu = edge_up(EMap,R,C),
+    Blu = edge_up(EMap,R,C-1),
+    (Bl #/\ Bul) #\/ (Bu #/\ Blu),
+    turn(EMap,R-1,C,T1),
+    turn(EMap,R+1,C,T2),
+    turn(EMap,R,C-1,T3),
+    turn(EMap,R,C+1,T4),
+    T1 #\/ T2 #\/ T3 #\/ T4,
+    Bl #/\ Bul #=> T1 #\/ T2,
+    Bu #/\ Blu #=> T3 #\/ T4.
+
+% NOTE: (NR,NC) = (NR0,NC0) in the caller
+constrain_inside(IM,EMap,NR,NC) =>
+    foreach (R in 1..NR, C in 1..NC)
+        Bl = edge_left(EMap,R,C),
+        Br = edge_right(EMap,R,C),
+        Bu = edge_up(EMap,R,C),
+        Bd = edge_down(EMap,R,C),
+        if R == 1 then
+            #~Bu #=> IM[R,C] #= 0
+        end,
+        if R == NR then
+            #~Bd #=> IM[R,C] #= 0
+        end,
+        if C == 1 then
+            #~Bl #=> IM[R,C] #= 0
+        end,
+        if C == NC then
+            #~Br #=> IM[R,C] #= 0
+        end,
+        if R < NR then
+            #~Bd #=> IM[R,C] #= IM[R+1,C]            
+        end,
+        if C < NC then
+            #~Br #=> IM[R,C] #= IM[R,C+1]
+        end
+    end.
+        
+% NOTE: (NR,NC) = (NR0,NC0) in the caller
+constrain_visible(EMap,NR,NC,R,C,K) =>
+    VisM = new_array(NR,NC),
+    VisM[R,C] = 1,
+    foreach (R1 in 1..NR, C1 in 1..NC, R != R1, C != C1)
+        VisM[R1,C1] = 0
+    end,
+    VisM :: 0..1,
+    foreach (R1 in 2..R)
+        B = edge_up(EMap,R1,C),
+        VisM[R1,C] #/\ #~B #=> VisM[R1-1,C],
+        B #=> #~VisM[R1-1,C],
+        #~VisM[R1,C] #=> #~VisM[R1-1,C]
+    end,
+    foreach (R1 in R..NR-1)    
+        B = edge_down(EMap,R1,C),
+        VisM[R1,C] #/\ #~B #=> VisM[R1+1,C],
+        B #=> #~VisM[R1+1,C],
+        #~VisM[R1,C] #=> #~VisM[R1+1,C]
+    end,
+    foreach (C1 in 2..C)    
+        B = edge_left(EMap,R,C1),
+        VisM[R,C1] #/\ #~B #=> VisM[R,C1-1],
+        B #=> #~VisM[R,C1-1],
+        #~VisM[R,C1] #=> #~VisM[R,C1-1]
+    end,
+    foreach (C1 in C..NC-1)    
+        B = edge_right(EMap,R,C1),
+        VisM[R,C1] #/\ #~B #=> VisM[R,C1+1],
+        B #=> #~VisM[R,C1+1],
+        #~VisM[R,C1] #=> #~VisM[R,C1+1]
+    end,
+    sum([VisM[R1,C1] : R1 in 1..NR, C1 in 1..NC]) #= K.
+
+output(Es) =>
+    HEs = [E : E  in Es, E = {_,_,1}],
+    println(len(HEs)),
+    HEs = [{(R1,C1),(R2,C2),_}|HEs1],
+    printf("%w %w %w %w\n",R1,C1,R2,C2),
+    output(R2,C2,R1,C1,HEs1).
+
+output(R,C,R,C,HEs) => true.
+output(R1,C1,R,C,HEs) => 
+    member({(R1,C1),(R2,C2),_}, HEs),
+    printf("%w %w %w %w\n",R1,C1,R2,C2),
+    output(R2,C2,R,C,HEs).
+
+print_matrix(M) =>
+    foreach (R in M)
+        println(R)
+    end.

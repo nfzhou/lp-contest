@@ -1,6 +1,6 @@
 % https://github.com/lpcp-contest/lpcp-contest-2025/tree/main/problem-5
 
-import sat, util.
+import cp, util.
 
 main =>
     main([stdin]).
@@ -14,11 +14,12 @@ main([File]) =>
     end,
     close(IS),
     N2 = N*N,
-    between(3, N2 div 3, K),
+    between(N2-N, -1, 1, K),
     Ps = [(R,C) : R in 1..N, C in 1..N],
-    choose(Ps,N2,K,ChosenPs),
+    choose(Ps,N2,K,ChosenPs),   % choose cells to be changed to variables
+    MapPs = new_set(ChosenPs),
     A = new_array(N,N),
-    foreach ((R,C) in ChosenPs)
+    foreach (R in 1..N, C in 1..N, not MapPs.has_key((R,C)))
         A[R,C] = M[R,C]
     end,
     A :: 1..N,
@@ -26,11 +27,9 @@ main([File]) =>
         all_different(A[I]),
         all_different([A[R,I] : R in 1..N])
     end,
-    (find1(N,A) -> 
-        output(M,ChosenPs)
-    ;
-        fail
-    ).
+    
+    solve_all([$limit(2)],A) = [_],
+    output(M,MapPs).    
     
 choose(Ps,K,K1,ChosenPs), K1 > K => fail.
 choose(Ps,K,K1,ChosenPs), K == K1 => ChosenPs = Ps.
@@ -40,25 +39,14 @@ choose([P|Ps],K,K1,ChosenPs) ?=>
 choose([_|Ps],K,K1,ChosenPs) =>
     choose(Ps,K-1,K1,ChosenPs).
 
-find1(N,A) ?=>
-    Map = get_global_map(),
-    solve(A),
-    Map.put(sol,A),
-    fail.
-find1(N,A) =>
-    Map = get_global_map(),
-    A1 = Map.get(sol),
-    sum([A[R,C] #!= A1[R,C] : R in 1..N, C in 1..N]) #> 0,
-    (solve(A) -> fail; true).
-
-output(M,Ps) =>
+output(M,MapPs) =>
     N = len(M),
     foreach (R in 1..N)
         foreach (C in 1..N)
-            if member((R,C), Ps) then
-                printf("%w ",M[R,C])
-            else
+            if MapPs.has_key((R,C)) then
                 printf("%w ",0)
+            else
+                printf("%w ",M[R,C])
             end
         end,
         nl
