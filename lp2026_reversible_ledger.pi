@@ -1,0 +1,54 @@
+% https://github.com/nfzhou/lp-contest/Reversible_Ledger.pdf
+%
+% to run, picat reversible_ledger K
+
+main([Arg]) =>
+    K = to_int(Arg),
+    TotalCount = 0,
+    foreach(L in 1..K)
+        Cnt = count_reversible(L),
+        TotalCount :=  TotalCount+Cnt
+    end,
+    writeln(TotalCount).
+
+count_reversible(N) = Rez =>
+    Ci = 0,
+    count(1,N,Ci,0,Count1),
+    count(1,N,Ci,1,Count2),
+    Rez = Count1+Count2.
+
+table
+count(I,J,Ci,Co,Count), I > J => Count = 0.
+count(I,J,Ci,Co,Count), I == J => 
+    Total = 0,
+    foreach (D in 0..9)
+        S is 2*D+Ci,
+        if odd(S mod 10) && S div 10 == Co then
+            Total := Total+1
+        end
+    end,
+    Count = Total.
+count(I,J,Ci,Co,Count), I+1 == J =>
+    (I == 1 -> Lo = 1; Lo = 0),
+    Total = 0,
+    foreach (D1 in Lo..9, D2 in Lo..9)
+        Si is D1+D2+Ci,
+        LowCo is Si div 10,
+        Sj is D1+D2+LowCo,
+        if odd(Si mod 10) && odd(Sj mod 10) && Sj div 10 == Co then
+            Total := Total + 1
+        end
+    end,
+    Count = Total.
+count(I,J,Ci,Co,Count) =>
+    (I == 1 -> Lo = 1; Lo = 0),
+    Total = 0,
+    foreach (D1 in Lo..9, D2 in Lo..9, LowCo in 0..1)
+        Si is D1+D2+Ci,
+        Sj is D1+D2+LowCo,
+        if odd(Si mod 10) && odd(Sj mod 10) && Sj div 10 == Co then
+            count(I+1,J-1, Si div 10, LowCo, ThisCount),
+            Total := Total + ThisCount
+        end
+    end,
+    Count = Total.

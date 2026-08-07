@@ -1,0 +1,60 @@
+% https://github.com/nfzhou/lp-contest/Hot_Pots.pdf
+%
+% to run, picat hot_pots < instance_file
+
+import util.
+
+main ?=>
+    [NR,NC,N,A] = [to_int(Token) : Token in split(read_line())],
+    Dumps = [Dump : _ in 1..N, Dump = [to_int(Token) : Token in split(read_line())]],
+    Pots = {to_int(Token) : Token in split(read_line())},
+    Grid = {Row : _ in 1..NR, Row = {to_int(Token) : Token in split(read_line())}},
+    Visited = new_array(NR,NC),
+    foreach ([R,C,_] in Dumps)
+        Visited[R,C] = 1
+    end,
+    LimitArr = new_array(A),
+    foreach (I in 1..A)
+        (Pots[I] == 0 -> LimitArr[I] = -1; LimitArr[I] = Pots[I])
+    end,
+    move_dumps(Dumps,NR,NC,Grid,Visited,Dirs,Dists,LimitArr),
+    foreach (I in 1..A)
+        LimitArr[I] == -1 || LimitArr[I] == 0
+    end,
+    foreach ({Dir,Dist} in zip(Dirs,Dists))
+        print_dir(Dir), print(' '),  println(Dist)
+    end.
+main =>
+    true.
+
+move_dumps([],NR,NC,Grid,Visited,Dirs,Dists,LimitArr) => Dirs = [], Dists = [].
+move_dumps([[R,C,V]|Dumps],NR,NC,Grid,Visited,Dirs,Dists,LimitArr) => 
+    member(Dir, [(0,-1),(0,1),(-1,0),(1,0)]),
+    choose_dest(R,C,Dir,R1,C1,NR,NC,Grid,Visited),
+    Pot = Grid[R1,C1],
+    if LimitArr[Pot] !== -1 then
+        LimitArr[Pot] := LimitArr[Pot] - V,
+        LimitArr[Pot] >= 0
+    end,
+    Dist = abs(R1-R) + abs(C1-C),
+    Dirs = [Dir|DirsR],
+    Dists = [Dist|DistsR],
+    move_dumps(Dumps,NR,NC,Grid,Visited,DirsR,DistsR,LimitArr).
+
+choose_dest(R,C,Dir@(Dr,Dc),DestR,DestC,NR,NC,Grid,Visited) =>
+    R1 = R+Dr,
+    C1 = C+Dc,
+    R1 >= 1, R1 =< NR,
+    C1 >= 1, C1 =< NC,
+    var(Visited[R1,C1]),
+    Visited[R1,C1] = 1,
+    (Grid[R,C] == 0, Grid[R1,C1] !== 0,
+     DestR = R1, DestC = C1
+    ;
+     choose_dest(R1,C1,Dir,DestR,DestC,NR,NC,Grid,Visited)
+    ).    
+    
+print_dir((0,-1)) => print('L').
+print_dir((0,1)) => print('R').
+print_dir((-1,0)) => print('U').
+print_dir(_) => print('D').

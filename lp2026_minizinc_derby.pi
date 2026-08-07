@@ -1,0 +1,66 @@
+% https://github.com/nfzhou/lp-contest/MiniZinc_Derby.pdf
+%
+% to run, picat minizinc_derby   instance
+%
+% by Cristian Grozea
+
+
+import util.
+
+rnm(F) = M =>
+    M = {A.map(to_int).to_array : A in read_file_lines(F).map(split)}.
+
+p(A) =>
+    println(A).
+
+pp(A) =>
+    foreach (X in A)
+        p(X)
+    end,
+    println("-----------------------------------").
+
+table(+,+,-,max,nt)
+p([], _, Po, So, _) =>
+    Po = [],
+    So = 0.
+
+p(L, C, Po, So, A) =>
+    % p({l=L,c=C,s=Si}),
+    member(X, L),
+    L2 = delete(L, X),
+    C2 = {C[I] + A[X,I] : I in 1..C.len},
+    r(C, F, La),
+    r(C2, F2, La2),
+    p(L2, C2, Pi, Si, A),
+    So = Si + cond(F != F2, 2, 0) + cond(La != La2, 1, 0),
+    Po = [X|Pi].
+    % if (Po.len == 3) p(Pi) end
+
+r(A, F, L) =>
+    Mn = min(A),
+    Mx = max(A),
+    F = [I : I in 1..A.len, A[I] == Mx],
+    L = [I : I in 1..A.len, A[I] == Mn].
+
+main([F]) =>
+    A = rnm(F).to_list,
+    % pp(A),
+    L = [X[1] : X in A].remove_dups.sort,
+    println(inst = L),
+    T = [X[2] : X in A].remove_dups.sort,
+    print(teams = T),
+    nl,
+    S = [[X[3] : X in A, X[2] == I].sum : I in T],
+    pp(S),
+    B = new_array(L.len, T.len),
+    foreach (X in L, Y in T)
+        B[X,Y] = 0
+    end,
+    foreach (I in 1..A.len)
+        B[A[I,1],A[I,2]] := A[I,3]
+    end,
+    % pp(A),
+    pp(B),
+    p(L, {0 : _ in T}, P, Sc, B),
+    p(p = P),
+    p(s = Sc).
