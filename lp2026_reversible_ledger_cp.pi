@@ -1,0 +1,39 @@
+% https://github.com/nfzhou/lp-contest/blob/main/Reversible_Ledger.pdf
+% not as scable as https://github.com/nfzhou/lp-contest/blob/main/lp2026_reversible_ledger.pi
+
+import cp.
+
+main([Arg]) =>
+println(Arg),
+    K = to_int(Arg),
+    count(K).
+
+count(K) ?=>
+    Map = get_global_map(),
+    Map.put(count,0),
+    between(1,K,L),
+    Cnt = count_reversible(L),
+    Map.put(count, Map.get(count)+Cnt),
+    fail.
+count(K) =>
+    Map = get_global_map(),
+    println(Map.get(count)).
+
+count_reversible(L)=Rez =>
+    Ds = new_list(L),
+    Ds :: 0..9,
+    Ds[1] :: 1..9, % First digit non-zero
+    Ds[L] :: 1..9, % Last digit non-zero
+    suma(Ds, reverse(Ds), 0),
+    Rez = count_all(solve(Ds)).
+
+% suma(A, B, C) performs ripple-carry addition
+% Digits are stored least-significant-first.
+suma([], [], C) => C :: 0..1.
+suma([A|AR], [B|BR], C) =>
+    S #= A + B + C,
+    D #= S mod 10,
+    NC #= S div 10,
+    NC :: 0..1,
+    D :: [1,3,5,7,9], % All sum digits must be odd
+    suma(AR, BR, NC).
