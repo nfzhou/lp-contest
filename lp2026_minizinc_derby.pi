@@ -26,8 +26,9 @@ p([], _, Po, So, _) =>
 
 p(L, C, Po, So, A) =>
     % p({l=L,c=C,s=Si}),
-    member(X, L),
-    L2 = delete(L, X),
+%    member(X, L),
+%    L2 = delete(L, X),
+    select(X,L,L2),
     C2 = {C[I] + A[X,I] : I in 1..C.len},
     r(C, F, La),
     r(C2, F2, La2),
