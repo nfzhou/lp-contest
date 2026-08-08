@@ -5,7 +5,7 @@
 main([Arg]) =>
     K = to_int(Arg),
     TotalCount = 0,
-    foreach(L in 1..K)
+    foreach(L in 2..K)
         Cnt = count_reversible(L),
         TotalCount :=  TotalCount+Cnt
     end,
@@ -13,13 +13,12 @@ main([Arg]) =>
 
 count_reversible(N) = Rez =>
     Ci = 0,
-    count(1,N,Ci,0,Count1),
-    count(1,N,Ci,1,Count2),
+    count(N,0,Ci,0,Count1),
+    count(N,0,Ci,1,Count2),
     Rez = Count1+Count2.
 
 table
-count(I,J,Ci,Co,Count), I > J => Count = 0.
-count(I,J,Ci,Co,Count), I == J => 
+count(1,_,Ci,Co,Count) => 
     Total = 0,
     foreach (D in 0..9)
         S is 2*D+Ci,
@@ -28,8 +27,8 @@ count(I,J,Ci,Co,Count), I == J =>
         end
     end,
     Count = Total.
-count(I,J,Ci,Co,Count), I+1 == J =>
-    (I == 1 -> Lo = 1; Lo = 0),
+count(2,I,Ci,Co,Count) =>
+    (I == 0 -> Lo = 1; Lo = 0),
     Total = 0,
     foreach (D1 in Lo..9, D2 in Lo..9)
         Si is D1+D2+Ci,
@@ -40,14 +39,14 @@ count(I,J,Ci,Co,Count), I+1 == J =>
         end
     end,
     Count = Total.
-count(I,J,Ci,Co,Count) =>
-    (I == 1 -> Lo = 1; Lo = 0),
+count(N,I,Ci,Co,Count) =>
+    (I == 0 -> Lo = 1; Lo = 0),
     Total = 0,
     foreach (D1 in Lo..9, D2 in Lo..9, LowCo in 0..1)
         Si is D1+D2+Ci,
         Sj is D1+D2+LowCo,
         if odd(Si mod 10) && odd(Sj mod 10) && Sj div 10 == Co then
-            count(I+1,J-1, Si div 10, LowCo, ThisCount),
+            count(N-2,1, Si div 10, LowCo, ThisCount),
             Total := Total + ThisCount
         end
     end,
